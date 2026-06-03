@@ -1,0 +1,20 @@
+:root {
+  --color-bg: #ffffff;
+  --color-bg-inverse: #000000;
+  --color-text: #000000;
+  --color-text-muted: #9ca3af;
+  --color-text-faded: #d1d5db;
+  --color-text-inverse: #ffffff;
+  --color-text-inverse-muted: #4b5563;
+  --color-start-idle: #d4d4d4;
+  --color-start-hover: #ffffff;
+  --font-start-size: 128px;
+  --font-start-family: Helvetica, Arial, sans-serif;
+  --ease-parabola: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  --duration-fill: 0.75s;
+  --color-surface-raised: #e5e7eb;
+  --color-mic-idle: #6b7280;
+  --font-family: system-ui, -apple-system, 'Segoe UI', Inter, Helvetica, sans-serif;
+  --radius-sheet: 16px;
+  --shadow-recording: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
