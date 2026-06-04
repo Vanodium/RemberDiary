@@ -26,6 +26,40 @@ export function buildCalendarMonth(year, month) {
   return { weekdays: WEEKDAYS, cells };
 }
 
+function isTimelineWorkday(date) {
+  const day = date.getDay();
+  return day >= 1 && day <= 5;
+}
+
+/** Month grid for timeline: each row is one week (max 5 workdays + 2 weekend days). */
+export function buildTimelineMonthRows(year, month) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const rows = [];
+
+  let day = 1;
+  while (day <= daysInMonth) {
+    const workdays = [];
+    const weekends = [];
+
+    while (day <= daysInMonth) {
+      const date = new Date(year, month, day);
+      if (isTimelineWorkday(date)) {
+        workdays.push(date);
+      } else {
+        weekends.push(date);
+      }
+
+      const endedWeek = date.getDay() === 0;
+      day += 1;
+      if (endedWeek) break;
+    }
+
+    rows.push({ workdays, weekends });
+  }
+
+  return rows;
+}
+
 export function toIsoDate(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
