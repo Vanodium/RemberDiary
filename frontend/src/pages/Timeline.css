@@ -1,0 +1,136 @@
+.timeline-page {
+  --timeline-padding: clamp(1.25rem, 3vmin, 2rem);
+  --timeline-font-date: clamp(1.6rem, 1.25rem + 3.5vmin, 2.25rem);
+  --timeline-font-title: clamp(2.5rem, 2rem + 5vmin, 4rem);
+  --timeline-font-nav: clamp(1.25rem, 1rem + 2vmin, 1.75rem);
+
+  min-height: 100vh;
+  padding: var(--timeline-padding);
+  position: relative;
+  background: var(--color-bg);
+  font-family: var(--font-start-family);
+}
+
+.timeline-layout {
+  display: flex;
+  gap: clamp(2rem, 4vw, 4rem);
+  align-items: flex-start;
+  max-width: 960px;
+  margin: 0 auto;
+  min-height: calc(100vh - var(--timeline-padding) * 2 - 3rem);
+}
+
+.calendar-section {
+  flex: 1;
+  max-width: 360px;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.25rem;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: clamp(0.7rem, 0.6rem + 0.5vmin, 0.8125rem);
+  color: var(--color-text-muted);
+  padding: 0.25rem;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: clamp(0.8rem, 0.7rem + 0.6vmin, 0.9375rem);
+  cursor: default;
+  color: var(--color-text-faded);
+  border-radius: 4px;
+}
+
+.calendar-cell.other-month {
+  color: var(--color-text-faded);
+  opacity: 0.45;
+}
+
+.calendar-cell.has-summary {
+  font-weight: 700;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.calendar-cell.has-summary:hover {
+  text-decoration: underline;
+}
+
+.calendar-cell.selected {
+  background: var(--color-surface-raised);
+}
+
+.calendar-cell:disabled {
+  cursor: default;
+}
+
+.calendar-nav {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1.25rem;
+}
+
+.calendar-nav-btn {
+  font-size: var(--timeline-font-nav);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.timeline-meta {
+  padding-top: 0.5rem;
+}
+
+.timeline-date {
+  font-weight: 700;
+  font-size: var(--timeline-font-date);
+  line-height: 1.1;
+}
+
+.timeline-title {
+  font-size: var(--timeline-font-title);
+  font-weight: 700;
+  line-height: 1;
+  margin-top: 0.35rem;
+}
+
+.timeline-empty {
+  margin-top: 1rem;
+  font-size: clamp(0.875rem, 0.8rem + 0.5vmin, 1rem);
+  color: var(--color-text-muted);
+}
+
+.timeline-home,
+.timeline-settings {
+  position: absolute;
+  bottom: var(--timeline-padding);
+  font-size: clamp(1rem, 0.75rem + 2.5vmin, 1.35rem);
+  font-weight: 300;
+  text-decoration: none;
+}
+
+.timeline-home {
+  left: var(--timeline-padding);
+}
+
+.timeline-settings {
+  right: var(--timeline-padding);
+}
+
+@media (max-width: 640px) {
+  .timeline-layout {
+    flex-direction: column;
+  }
+
+  .calendar-section {
+    max-width: none;
+  }
+}
