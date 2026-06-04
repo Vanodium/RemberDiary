@@ -1,0 +1,88 @@
+.home {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 2rem;
+  background: var(--color-bg);
+}
+
+.home-main {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-left: -2rem;
+}
+
+.mic-btn {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--color-bg-inverse);
+  background: transparent;
+  color: var(--color-bg-inverse);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.mic-btn--recording {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-recording);
+}
+
+.home-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  transition: color 0.2s;
+}
+
+.home-meta--faded,
+.home-meta--faded a {
+  color: var(--color-text-faded);
+}
+
+.home-date {
+  font-weight: bold;
+  font-size: 2.5rem;
+  text-align: right;
+}
+
+.home-timeline {
+  font-weight: 400;
+  font-size: 2.25rem;
+  line-height: 1;
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-align: right;
+}
+
+.home-meta--faded .home-timeline {
+  color: var(--color-text-faded);
+}
+
+.home-settings {
+  position: absolute;
+  bottom: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+@media (max-width: 480px) {
+  .home-main {
+    flex-direction: column;
+    text-align: center;
+    margin-left: 0;
+  }
+}
