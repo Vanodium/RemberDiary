@@ -91,7 +91,7 @@ function readTranscript(outputDir, wavPath) {
   return fs.readFileSync(txtPath, 'utf8').trim();
 }
 
-async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDate }) {
+async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDate, userId }) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rember-whisper-'));
   const wavPath = path.join(tmpDir, 'input.wav');
   const outDir = path.join(tmpDir, 'out');
@@ -123,7 +123,9 @@ async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDat
     saveTranscript(id, 'done', text);
     console.log(`\n── transcript ${id} (${recordedAt}) ──\n${text}\n`);
 
-    await updateDailySummary(date);
+    if (userId) {
+      await updateDailySummary(date, userId);
+    }
   } catch (err) {
     saveTranscript(id, 'failed');
     throw err;

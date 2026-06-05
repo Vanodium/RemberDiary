@@ -1,6 +1,8 @@
 import { Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import { OverlayProvider } from './context/OverlayContext';
 import { SummariesProvider } from './context/SummariesContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import SettingsSheet from './components/SettingsSheet';
 import SummarySheet from './components/SummarySheet';
 import Main from './pages/Main';
@@ -10,17 +12,33 @@ import Timeline from './pages/Timeline';
 
 export default function App() {
   return (
-    <SummariesProvider>
-    <OverlayProvider>
-      <Routes>
-        <Route path="/" element={<Main />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/timeline" element={<Timeline />} />
-      </Routes>
-      <SettingsSheet />
-      <SummarySheet />
-    </OverlayProvider>
-    </SummariesProvider>
+    <AuthProvider>
+      <SummariesProvider>
+        <OverlayProvider>
+          <Routes>
+            <Route path="/" element={<Main />} />
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/home"
+              element={
+                <ProtectedRoute>
+                  <Home />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/timeline"
+              element={
+                <ProtectedRoute>
+                  <Timeline />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+          <SettingsSheet />
+          <SummarySheet />
+        </OverlayProvider>
+      </SummariesProvider>
+    </AuthProvider>
   );
 }

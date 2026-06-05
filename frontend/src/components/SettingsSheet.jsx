@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useOverlay } from '../context/OverlayContext';
-import { mockUser } from '../lib/mockData';
 import { formatTimezoneDisplay, WEEKDAY_OPTIONS } from '../lib/calendar';
 import BottomSheet from './BottomSheet';
 import MicIcon from './MicIcon';
@@ -9,14 +9,49 @@ import './sheets.css';
 
 export default function SettingsSheet() {
   const navigate = useNavigate();
+  const { user, logout, saveSettings } = useAuth();
   const { settingsOpen, closeSettings } = useOverlay();
-  const [timezone, setTimezone] = useState(mockUser.timezone);
-  const [endOfWeekDay, setEndOfWeekDay] = useState(mockUser.endOfWeekDay);
+  const [timezone, setTimezone] = useState('UTC');
+  const [endOfWeekDay, setEndOfWeekDay] = useState('sun');
+
+  useEffect(() => {
+    if (user) {
+      setTimezone(user.timezone);
+      setEndOfWeekDay(user.endOfWeekDay);
+    }
+  }, [user]);
+
+  const handleTimezoneChange = async (value) => {
+    setTimezone(value);
+    try {
+      await saveSettings({ timezone: value });
+    } catch {
+      setTimezone(user?.timezone ?? 'UTC');
+    }
+  };
+
+  const handleEndOfWeekChange = async (value) => {
+    setEndOfWeekDay(value);
+    try {
+      await saveSettings({ endOfWeekDay: value });
+    } catch {
+      setEndOfWeekDay(user?.endOfWeekDay ?? 'sun');
+    }
+  };
 
   const handleLogout = () => {
     closeSettings();
+    logout();
     navigate('/');
   };
+
+  const handleChangeAccount = () => {
+    closeSettings();
+    logout();
+    navigate('/login');
+  };
+
+  if (!user) return null;
 
   return (
     <BottomSheet open={settingsOpen} onClose={closeSettings} labelledBy="settings-title" className="settings-sheet">
@@ -31,7 +66,7 @@ export default function SettingsSheet() {
       <div className="settings-rows">
         <label className="settings-row">
           <span>timezone</span>
-          <select value={timezone} onChange={(e) => setTimezone(e.target.value)}>
+          <select value={timezone} onChange={(e) => handleTimezoneChange(e.target.value)}>
             <option value="UTC">utc</option>
             <option value="Europe/Moscow">europe/moscow ({formatTimezoneDisplay('Europe/Moscow')})</option>
             <option value="America/New_York">america/new_york ({formatTimezoneDisplay('America/New_York')})</option>
@@ -41,7 +76,7 @@ export default function SettingsSheet() {
 
         <label className="settings-row">
           <span>end of week</span>
-          <select value={endOfWeekDay} onChange={(e) => setEndOfWeekDay(e.target.value)}>
+          <select value={endOfWeekDay} onChange={(e) => handleEndOfWeekChange(e.target.value)}>
             {WEEKDAY_OPTIONS.map((day) => (
               <option key={day.value} value={day.value}>
                 {day.label}
@@ -53,8 +88,8 @@ export default function SettingsSheet() {
         <div className="settings-row settings-row--account">
           <span>account</span>
           <div className="settings-account">
-            <span>{mockUser.email}</span>
-            <button type="button" className="text-btn" onClick={handleLogout}>
+            <span>{user.email}</span>
+            <button type="button" className="text-btn" onClick={handleChangeAccount}>
               change
             </button>
           </div>

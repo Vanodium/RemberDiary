@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import authRouter from './routes/auth.js';
 import recordingsRouter from './routes/recordings.js';
 import summariesRouter from './routes/summaries.js';
 
@@ -13,6 +14,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true });
 });
 
+app.use('/api/auth', authRouter);
 app.use('/api/recordings', recordingsRouter);
 app.use('/api/summaries', summariesRouter);
 

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useAuth } from './AuthContext';
 import { fetchSummaries } from '../lib/api';
 
 const SummariesContext = createContext(null);
@@ -6,10 +7,17 @@ const SummariesContext = createContext(null);
 const POLL_MS = 5000;
 
 export function SummariesProvider({ children }) {
+  const { user } = useAuth();
   const [summaries, setSummaries] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const refresh = useCallback(async () => {
+    if (!user) {
+      setSummaries({});
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await fetchSummaries();
       setSummaries(data.summaries ?? {});
@@ -18,13 +26,19 @@ export function SummariesProvider({ children }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
+    if (!user) {
+      setSummaries({});
+      return undefined;
+    }
+
+    setLoading(true);
     refresh();
     const id = setInterval(refresh, POLL_MS);
     return () => clearInterval(id);
-  }, [refresh]);
+  }, [user, refresh]);
 
   const value = useMemo(
     () => ({

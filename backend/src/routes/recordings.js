@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import db from '../db/index.js';
+import { requireAuth } from '../middleware/auth.js';
 import { transcribeRecording } from '../services/transcribe.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -32,15 +33,18 @@ const upload = multer({
 
 const router = Router();
 
-router.get('/', (_req, res) => {
+router.use(requireAuth);
+
+router.get('/', (req, res) => {
   const rows = db
     .prepare(
       `SELECT id, mime_type AS mimeType, duration_ms AS durationMs,
               recorded_at AS recordedAt, created_at AS createdAt
        FROM recordings
+       WHERE user_id = ?
        ORDER BY recorded_at DESC`,
     )
-    .all();
+    .all(req.user.id);
 
   res.json({ recordings: rows });
 });
@@ -57,9 +61,17 @@ router.post('/', upload.single('audio'), (req, res) => {
 
   db.prepare(
     `INSERT INTO recordings
-       (id, filename, mime_type, duration_ms, recorded_at, recorded_date, transcript_status)
-     VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
-  ).run(id, req.file.filename, req.file.mimetype, durationMs, recordedAt, recordedDate);
+       (id, filename, mime_type, duration_ms, recorded_at, recorded_date, transcript_status, user_id)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)`,
+  ).run(
+    id,
+    req.file.filename,
+    req.file.mimetype,
+    durationMs,
+    recordedAt,
+    recordedDate,
+    req.user.id,
+  );
 
   const row = db
     .prepare(
@@ -71,11 +83,19 @@ router.post('/', upload.single('audio'), (req, res) => {
 
   res.status(201).json(row);
 
-  transcribeRecording(path.join(audioDir, req.file.filename), { id, recordedAt, recordedDate });
+  transcribeRecording(path.join(audioDir, req.file.filename), {
+    id,
+    recordedAt,
+    recordedDate,
+    userId: req.user.id,
+  });
 });
 
 router.delete('/:id', (req, res) => {
-  const row = db.prepare('SELECT filename FROM recordings WHERE id = ?').get(req.params.id);
+  const row = db
+    .prepare('SELECT filename FROM recordings WHERE id = ? AND user_id = ?')
+    .get(req.params.id, req.user.id);
+
   if (!row) {
     return res.status(404).json({ error: 'Recording not found' });
   }

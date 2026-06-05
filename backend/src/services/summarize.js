@@ -81,17 +81,17 @@ async function generateSummary(transcripts) {
   return fallbackSummary(transcripts);
 }
 
-export async function updateDailySummary(date) {
+export async function updateDailySummary(date, userId) {
   const rows = db
     .prepare(
       `SELECT transcript FROM recordings
-       WHERE recorded_date = ? AND transcript_status = 'done' AND transcript IS NOT NULL
+       WHERE user_id = ? AND recorded_date = ? AND transcript_status = 'done' AND transcript IS NOT NULL
        ORDER BY recorded_at ASC`,
     )
-    .all(date);
+    .all(userId, date);
 
   if (rows.length === 0) {
-    db.prepare('DELETE FROM summaries WHERE date = ?').run(date);
+    db.prepare('DELETE FROM summaries WHERE user_id = ? AND date = ?').run(userId, date);
     return null;
   }
 
@@ -99,14 +99,14 @@ export async function updateDailySummary(date) {
   const content = await generateSummary(transcripts);
 
   if (!content) {
-    db.prepare('DELETE FROM summaries WHERE date = ?').run(date);
+    db.prepare('DELETE FROM summaries WHERE user_id = ? AND date = ?').run(userId, date);
     return null;
   }
 
   db.prepare(
-    `INSERT INTO summaries (date, content) VALUES (?, ?)
-     ON CONFLICT(date) DO UPDATE SET content = excluded.content`,
-  ).run(date, content);
+    `INSERT INTO summaries (user_id, date, content) VALUES (?, ?, ?)
+     ON CONFLICT(user_id, date) DO UPDATE SET content = excluded.content`,
+  ).run(userId, date, content);
 
   console.log(`\n── summary ${date} ──\n${content}\n`);
   return content;
