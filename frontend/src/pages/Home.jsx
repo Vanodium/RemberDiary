@@ -19,6 +19,12 @@ export default function Home() {
   const [status, setStatus] = useState(null);
 
   const handleRecordingComplete = useCallback(async (recording) => {
+    if (recording.silent) {
+      setStatus('no audio detected — check mic');
+      setTimeout(() => setStatus(null), 4000);
+      return;
+    }
+
     setStatus('saving…');
 
     const localId = await saveLocalRecording(recording);

@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { randomUUID } from 'crypto';
 import db from '../db/index.js';
+import { transcribeRecording } from '../services/transcribe.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const audioDir = path.join(__dirname, '../../data/audio');
@@ -67,6 +68,8 @@ router.post('/', upload.single('audio'), (req, res) => {
     .get(id);
 
   res.status(201).json(row);
+
+  transcribeRecording(path.join(audioDir, req.file.filename), { id, recordedAt });
 });
 
 router.delete('/:id', (req, res) => {

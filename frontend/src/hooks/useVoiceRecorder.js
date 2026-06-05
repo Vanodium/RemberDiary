@@ -1,8 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupportedMimeType } from '../lib/mime';
 
+const AUDIO_CONSTRAINTS = {
+  channelCount: 1,
+  echoCancellation: false,
+  noiseSuppression: false,
+  autoGainControl: true,
+};
+
+const SILENT_PEAK_THRESHOLD = 8;
+
 function stopStream(stream) {
   stream?.getTracks().forEach((track) => track.stop());
+}
+
+function createLevelMonitor(stream, onPeak) {
+  const ctx = new AudioContext();
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 256;
+  const source = ctx.createMediaStreamSource(stream);
+  source.connect(analyser);
+
+  const bins = new Uint8Array(analyser.frequencyBinCount);
+  const interval = setInterval(() => {
+    analyser.getByteFrequencyData(bins);
+    onPeak(Math.max(...bins));
+  }, 100);
+
+  return () => {
+    clearInterval(interval);
+    source.disconnect();
+    void ctx.close();
+  };
 }
 
 export function useVoiceRecorder({ onComplete }) {
@@ -15,6 +44,8 @@ export function useVoiceRecorder({ onComplete }) {
   const chunksRef = useRef([]);
   const startTimeRef = useRef(0);
   const timerRef = useRef(null);
+  const stopLevelMonitorRef = useRef(null);
+  const peakLevelRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
 
   useEffect(() => {
@@ -33,8 +64,14 @@ export function useVoiceRecorder({ onComplete }) {
 
     try {
       setError(null);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      peakLevelRef.current = 0;
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
       streamRef.current = stream;
+
+      stopLevelMonitorRef.current = createLevelMonitor(stream, (peak) => {
+        peakLevelRef.current = Math.max(peakLevelRef.current, peak);
+      });
 
       const mimeType = getSupportedMimeType();
       const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
@@ -48,6 +85,8 @@ export function useVoiceRecorder({ onComplete }) {
         const elapsed = Date.now() - startTimeRef.current;
         const type = recorder.mimeType || mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type });
+        const peakLevel = peakLevelRef.current;
+        const silent = peakLevel < SILENT_PEAK_THRESHOLD;
 
         if (blob.size > 0) {
           onCompleteRef.current?.({
@@ -55,9 +94,13 @@ export function useVoiceRecorder({ onComplete }) {
             mimeType: type,
             durationMs: elapsed,
             recordedAt: new Date().toISOString(),
+            peakLevel,
+            silent,
           });
         }
 
+        stopLevelMonitorRef.current?.();
+        stopLevelMonitorRef.current = null;
         stopStream(streamRef.current);
         streamRef.current = null;
         recorderRef.current = null;
@@ -65,7 +108,7 @@ export function useVoiceRecorder({ onComplete }) {
 
       recorderRef.current = recorder;
       startTimeRef.current = Date.now();
-      recorder.start(250);
+      recorder.start();
       setRecording(true);
       setDurationMs(0);
 
@@ -74,6 +117,8 @@ export function useVoiceRecorder({ onComplete }) {
       }, 100);
     } catch (err) {
       setError(err?.message ?? 'Microphone access denied');
+      stopLevelMonitorRef.current?.();
+      stopLevelMonitorRef.current = null;
       stopStream(streamRef.current);
       streamRef.current = null;
     }
@@ -83,15 +128,19 @@ export function useVoiceRecorder({ onComplete }) {
     clearTimer();
     setRecording(false);
 
-    if (recorderRef.current?.state === 'recording') {
-      recorderRef.current.stop();
+    const recorder = recorderRef.current;
+    if (recorder?.state === 'recording') {
+      recorder.requestData();
+      recorder.stop();
     }
   }, [clearTimer]);
 
   useEffect(
     () => () => {
       clearTimer();
+      stopLevelMonitorRef.current?.();
       if (recorderRef.current?.state === 'recording') {
+        recorderRef.current.requestData();
         recorderRef.current.stop();
       }
       stopStream(streamRef.current);
