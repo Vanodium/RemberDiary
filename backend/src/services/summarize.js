@@ -1,11 +1,12 @@
 import db from '../db/index.js';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL ?? 'gpt-4o-mini';
+const OLLAMA_HOST = (process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434').replace(/\/$/, '');
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'llama3.2:1b';
 
-const SYSTEM_PROMPT = `You turn raw voice journal transcripts into a concise first-person daily journal entry.
-Write 2–4 sentences in past tense, warm and reflective — like the person wrote it themselves.
-Merge multiple notes from the same day into one coherent entry. Do not mention recording or transcription.`;
+const SYSTEM_PROMPT = `You turn raw voice journal transcripts into a short first-person daily highlight.
+Write 2–3 sentences in past tense — warm, reflective, like the person wrote it themselves.
+Capture the key moments and overall mood. Merge multiple notes into one coherent entry.
+Do not mention recording, transcription, or that these were voice notes.`;
 
 function fallbackSummary(transcripts) {
   const text = transcripts
@@ -20,37 +21,64 @@ function fallbackSummary(transcripts) {
   return text.trim();
 }
 
-async function generateSummary(transcripts) {
-  if (transcripts.length === 0) return '';
-
-  if (!OPENAI_API_KEY) {
-    return fallbackSummary(transcripts);
+function explainOllamaError(err, body = '') {
+  if (err?.cause?.code === 'ECONNREFUSED' || err?.message?.includes('fetch failed')) {
+    return 'Ollama is not running — open the Ollama app from Applications, or run: ollama serve';
   }
+  if (body.includes('llama-server binary not found')) {
+    return 'Homebrew Ollama is missing runtime binaries — install the app from https://ollama.com/download';
+  }
+  return err?.message ?? 'unknown error';
+}
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+async function callOllama(transcripts) {
+  let res;
+  try {
+    res = await fetch(`${OLLAMA_HOST}/api/chat`, {
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OPENAI_MODEL,
-      temperature: 0.7,
+      model: OLLAMA_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: transcripts.join('\n\n') },
       ],
+      stream: false,
+      options: {
+        temperature: 0.6,
+        num_predict: 180,
+      },
     }),
-  });
+    });
+  } catch (err) {
+    throw new Error(explainOllamaError(err));
+  }
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`OpenAI request failed (${res.status}): ${err}`);
+    const body = await res.text();
+    throw new Error(explainOllamaError(null, body));
   }
 
   const data = await res.json();
-  const content = data.choices?.[0]?.message?.content?.trim();
-  return content || fallbackSummary(transcripts);
+  return data.message?.content?.trim() ?? '';
+}
+
+async function generateSummary(transcripts) {
+  if (transcripts.length === 0) return '';
+
+  try {
+    const content = await callOllama(transcripts);
+    if (content) {
+      console.log(`[summarize] ${OLLAMA_MODEL} via Ollama`);
+      return content;
+    }
+  } catch (err) {
+    console.warn(`[summarize] Ollama unavailable (${OLLAMA_MODEL}): ${err.message}`);
+    console.warn('[summarize] Fix: open Ollama.app, then run: ollama pull llama3.2:1b');
+  }
+
+  console.log('[summarize] using text fallback');
+  return fallbackSummary(transcripts);
 }
 
 export async function updateDailySummary(date) {
