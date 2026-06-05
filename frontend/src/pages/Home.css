@@ -27,6 +27,32 @@
   margin-left: calc(-1 * var(--home-main-gap));
 }
 
+.home-mic-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.5rem, 0.35rem + 1vmin, 0.75rem);
+  flex-shrink: 0;
+}
+
+.home-duration {
+  font-size: clamp(0.85rem, 0.7rem + 1.5vmin, 1rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-faded);
+  margin: 0;
+}
+
+.home-status {
+  position: absolute;
+  bottom: calc(var(--home-settings-bottom) + 2.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: clamp(0.8rem, 0.65rem + 1.2vmin, 0.95rem);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
 .mic-btn {
   width: var(--home-mic-size);
   height: var(--home-mic-size);

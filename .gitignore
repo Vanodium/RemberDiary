@@ -1,1 +1,38 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Backend runtime data
+backend/data/audio/*
+!backend/data/audio/.gitkeep
+backend/data/*.db
+backend/data/*.db-*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Vite
+.vite/
+
+# Test coverage
+coverage/
