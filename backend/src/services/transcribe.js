@@ -3,6 +3,8 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
+import db from '../db/index.js';
+import { updateDailySummary } from './summarize.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -10,6 +12,12 @@ const WHISPER_BIN = process.env.WHISPER_BIN ?? 'whisper';
 const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'base';
 const WHISPER_LANGUAGE = process.env.WHISPER_LANGUAGE ?? 'en';
 const SILENCE_MEAN_DB = Number(process.env.WHISPER_SILENCE_DB ?? -45);
+
+function saveTranscript(id, status, text = null) {
+  db.prepare(
+    `UPDATE recordings SET transcript_status = ?, transcript = ? WHERE id = ?`,
+  ).run(status, text, id);
+}
 
 async function convertToWav(inputPath, outputPath) {
   await execFileAsync('ffmpeg', ['-y', '-i', inputPath, '-ar', '16000', '-ac', '1', outputPath]);
@@ -83,19 +91,22 @@ function readTranscript(outputDir, wavPath) {
   return fs.readFileSync(txtPath, 'utf8').trim();
 }
 
-async function transcribeRecordingAsync(audioPath, { id, recordedAt }) {
+async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDate }) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rember-whisper-'));
   const wavPath = path.join(tmpDir, 'input.wav');
   const outDir = path.join(tmpDir, 'out');
   fs.mkdirSync(outDir);
+
+  const date = recordedDate ?? recordedAt.slice(0, 10);
 
   try {
     await convertToWav(audioPath, wavPath);
 
     const meanVolume = await measureMeanVolume(wavPath);
     if (meanVolume !== null && meanVolume < SILENCE_MEAN_DB) {
+      saveTranscript(id, 'silent');
       console.log(
-        `\n── transcript ${id} (${recordedAt}) ──\n[silent recording — mean ${meanVolume} dB, check microphone permissions/device]\n`,
+        `\n── transcript ${id} (${recordedAt}) ──\n[silent recording — mean ${meanVolume} dB]\n`,
       );
       return;
     }
@@ -104,11 +115,18 @@ async function transcribeRecordingAsync(audioPath, { id, recordedAt }) {
     const text = readTranscript(outDir, wavPath);
 
     if (!text) {
+      saveTranscript(id, 'empty');
       console.log(`\n── transcript ${id} (${recordedAt}) ──\n[no speech detected]\n`);
       return;
     }
 
+    saveTranscript(id, 'done', text);
     console.log(`\n── transcript ${id} (${recordedAt}) ──\n${text}\n`);
+
+    await updateDailySummary(date);
+  } catch (err) {
+    saveTranscript(id, 'failed');
+    throw err;
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }

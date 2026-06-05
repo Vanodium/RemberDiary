@@ -6,11 +6,12 @@ import {
   formatShortDate,
   toIsoDate,
 } from '../lib/calendar';
-import { hasSummary } from '../lib/mockData';
+import { useSummaries } from '../context/SummariesContext';
 import './Timeline.css';
 
 export default function Timeline() {
   const { openSettings, openSummary } = useOverlay();
+  const { hasSummary } = useSummaries();
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());

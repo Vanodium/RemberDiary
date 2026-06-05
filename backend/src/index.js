@@ -21,6 +21,15 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: err.message ?? 'Internal server error' });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Rember API listening on http://localhost:${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use. Free it with:`);
+    console.error(`  lsof -ti :${PORT} | xargs kill -9`);
+    process.exit(1);
+  }
+  throw err;
 });

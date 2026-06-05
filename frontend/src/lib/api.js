@@ -8,12 +8,13 @@ async function parseJson(res) {
   return data;
 }
 
-export async function uploadRecording({ blob, mimeType, durationMs, recordedAt }) {
+export async function uploadRecording({ blob, mimeType, durationMs, recordedAt, recordedDate }) {
   const form = new FormData();
   const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'm4a' : 'audio';
   form.append('audio', blob, `recording.${ext}`);
   form.append('durationMs', String(durationMs));
   form.append('recordedAt', recordedAt);
+  form.append('recordedDate', recordedDate ?? recordedAt.slice(0, 10));
 
   const res = await fetch(`${API_BASE}/recordings`, {
     method: 'POST',

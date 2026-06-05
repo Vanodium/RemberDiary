@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { toIsoDate } from '../lib/calendar';
 import { getSupportedMimeType } from '../lib/mime';
 
 const AUDIO_CONSTRAINTS = {
@@ -89,11 +90,13 @@ export function useVoiceRecorder({ onComplete }) {
         const silent = peakLevel < SILENT_PEAK_THRESHOLD;
 
         if (blob.size > 0) {
+          const now = new Date();
           onCompleteRef.current?.({
             blob,
             mimeType: type,
             durationMs: elapsed,
-            recordedAt: new Date().toISOString(),
+            recordedAt: now.toISOString(),
+            recordedDate: toIsoDate(now),
             peakLevel,
             silent,
           });

@@ -53,11 +53,13 @@ router.post('/', upload.single('audio'), (req, res) => {
   const id = randomUUID();
   const durationMs = req.body.durationMs ? Number(req.body.durationMs) : null;
   const recordedAt = req.body.recordedAt ?? new Date().toISOString();
+  const recordedDate = req.body.recordedDate ?? recordedAt.slice(0, 10);
 
   db.prepare(
-    `INSERT INTO recordings (id, filename, mime_type, duration_ms, recorded_at)
-     VALUES (?, ?, ?, ?, ?)`,
-  ).run(id, req.file.filename, req.file.mimetype, durationMs, recordedAt);
+    `INSERT INTO recordings
+       (id, filename, mime_type, duration_ms, recorded_at, recorded_date, transcript_status)
+     VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
+  ).run(id, req.file.filename, req.file.mimetype, durationMs, recordedAt, recordedDate);
 
   const row = db
     .prepare(
@@ -69,7 +71,7 @@ router.post('/', upload.single('audio'), (req, res) => {
 
   res.status(201).json(row);
 
-  transcribeRecording(path.join(audioDir, req.file.filename), { id, recordedAt });
+  transcribeRecording(path.join(audioDir, req.file.filename), { id, recordedAt, recordedDate });
 });
 
 router.delete('/:id', (req, res) => {

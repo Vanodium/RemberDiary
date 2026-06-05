@@ -1,10 +1,11 @@
 import { useOverlay } from '../context/OverlayContext';
-import { getSummary } from '../lib/mockData';
+import { useSummaries } from '../context/SummariesContext';
 import { formatLongDate } from '../lib/calendar';
 import BottomSheet from './BottomSheet';
 
 export default function SummarySheet() {
   const { summaryDate, closeSummary } = useOverlay();
+  const { getSummary } = useSummaries();
   const summary = summaryDate ? getSummary(summaryDate) : null;
 
   return (
