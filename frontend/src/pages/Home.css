@@ -17,6 +17,7 @@
 }
 
 .home-left {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,29 +33,41 @@
 
 .home-mic-wrap {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: clamp(0.5rem, 0.35rem + 1vmin, 0.75rem);
+  justify-content: center;
+}
+
+.home-duration,
+.home-status,
+button.text-btn.home-settings {
+  position: absolute;
+  bottom: var(--page-bottom-control-offset);
+  transform: translateX(-50%);
+  line-height: 1;
+  font-size: var(--home-font-settings);
+  font-weight: 300;
+  margin: 0;
+}
+
+.home-duration,
+.home-status {
+  left: 25%;
+  text-align: center;
+  text-decoration: none;
 }
 
 .home-duration {
-  width: var(--home-mic-size);
-  font-size: clamp(0.85rem, 0.7rem + 1.5vmin, 1rem);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-faded);
-  text-align: center;
-  margin: 0;
 }
 
 .home-status {
-  position: absolute;
-  bottom: 1.5rem;
-  left: 25%;
-  transform: translateX(-50%);
-  margin: 0;
-  font-size: clamp(0.8rem, 0.65rem + 1.2vmin, 0.95rem);
-  color: var(--color-text-muted);
-  text-align: center;
+  color: var(--color-text-faded);
+}
+
+button.text-btn.home-settings {
+  left: 75%;
+  text-decoration: none;
 }
 
 .mic-btn {
@@ -70,7 +83,6 @@
   justify-content: center;
   transition: background 0.2s, box-shadow 1s, color 0.2s;
   flex-shrink: 0;
-  touch-action: none;
 }
 
 .mic-btn svg {
@@ -89,10 +101,6 @@
   box-shadow: var(--shadow-recording);
 }
 
-.home-left .home-duration {
-  color: var(--color-text-faded);
-}
-
 .home-left .mic-btn:hover {
   background: var(--color-bg);
   color: var(--color-accent);
@@ -101,6 +109,7 @@
 .home-left .mic-btn--recording {
   background: var(--color-bg);
   color: var(--color-accent);
+  box-shadow: var(--shadow-recording-active);
 }
 
 .home-meta {
@@ -146,16 +155,6 @@ a.text-btn.home-timeline {
   text-decoration: none;
 }
 
-button.text-btn.home-settings {
-  position: absolute;
-  bottom: var(--page-bottom-control-offset);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: var(--home-font-settings);
-  font-weight: 300;
-  text-decoration: none;
-}
-
 @media (max-width: 640px) {
   .home {
     flex-direction: column;
@@ -173,9 +172,5 @@ button.text-btn.home-settings {
 
   .home-right {
     min-height: 55vh;
-  }
-
-  .home-status {
-    left: 50%;
   }
 }

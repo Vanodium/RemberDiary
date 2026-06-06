@@ -20,6 +20,7 @@
   --font-family: system-ui, -apple-system, 'Segoe UI', Inter, Helvetica, sans-serif;
   --radius-sheet: 16px;
   --shadow-recording: 0 14px 75px 0 color-mix(in srgb, var(--color-accent) 50%, transparent);
+  --shadow-recording-active: 0 14px 75px 0 color-mix(in srgb, white 50%, transparent);
 
   /* Shared home / timeline layout (1440×900 baseline) */
   --page-mic-size: clamp(9rem, 19.236vw, 17.3125rem); /* 277px */

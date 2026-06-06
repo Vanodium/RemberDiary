@@ -1,61 +1,70 @@
 .login-page {
+  /* 1440×900 baseline: 64px type, 288px (20vw) input min-width */
+  --login-font-size: clamp(2rem, 4.444vw, 4rem);
+  --login-input-min-width: 20vw;
+  --login-font-settings: clamp(1rem, 0.75rem + 2.5vmin, 1.35rem);
+
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: clamp(1.25rem, 3vmin, 2rem);
   position: relative;
-}
-
-.login-back {
-  position: absolute;
-  top: clamp(1.25rem, 3vmin, 2rem);
-  left: clamp(1.25rem, 3vmin, 2rem);
-  font-size: clamp(0.9rem, 0.75rem + 1.5vmin, 1rem);
+  padding: clamp(1.25rem, 3vmin, 2rem);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-size: var(--login-font-size);
+  line-height: 1;
 }
 
 .login-main {
-  width: min(100%, 22rem);
   display: flex;
   flex-direction: column;
-  gap: clamp(1.5rem, 1.25rem + 2vmin, 2rem);
-}
-
-.login-title {
-  font-size: clamp(2rem, 1.5rem + 4vmin, 3rem);
-  font-weight: bold;
-  text-transform: lowercase;
+  align-items: center;
+  gap: clamp(1rem, 0.75rem + 1.5vmin, 1.25rem);
+  max-width: 100%;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: clamp(1rem, 0.75rem + 1.5vmin, 1.25rem);
+  align-items: center;
+  max-width: 100%;
 }
 
-.login-label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  font-size: clamp(0.85rem, 0.7rem + 1.2vmin, 0.95rem);
-  color: var(--color-text-muted);
-  text-transform: lowercase;
+.login-input-field {
+  display: inline-grid;
+  vertical-align: top;
+  min-width: var(--login-input-min-width);
+  max-width: 100%;
+}
+
+.login-input-sizer,
+.login-input {
+  grid-area: 1 / 1;
+  font: inherit;
+  line-height: 1;
+  text-align: center;
+}
+
+.login-input-sizer {
+  visibility: hidden;
+  white-space: pre;
+  padding: 0;
 }
 
 .login-input {
-  font: inherit;
-  font-size: clamp(1rem, 0.85rem + 1.5vmin, 1.15rem);
-  color: var(--color-text);
+  width: 100%;
+  min-width: 0;
+  color: var(--color-text-inverse);
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--color-text-faded);
-  padding: 0.35rem 0;
+  padding: 0;
   outline: none;
 }
 
-.login-input:focus {
-  border-bottom-color: var(--color-bg-inverse);
+.login-input::placeholder {
+  color: color-mix(in srgb, var(--color-text-inverse) 45%, transparent);
 }
 
 .login-input--code {
@@ -65,30 +74,61 @@
 
 .login-hint {
   font-size: clamp(0.85rem, 0.7rem + 1.2vmin, 0.95rem);
-  color: var(--color-text-muted);
+  color: color-mix(in srgb, var(--color-text-inverse) 55%, transparent);
+  text-align: center;
 }
 
 .login-hint span {
-  color: var(--color-text);
+  color: var(--color-text-inverse);
 }
 
-.login-submit {
-  align-self: flex-start;
-  font-size: clamp(1rem, 0.85rem + 1.5vmin, 1.15rem);
-  font-weight: bold;
+button.text-btn.login-submit {
+  position: absolute;
+  bottom: var(--page-bottom-control-offset);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: var(--login-font-settings);
+  font-weight: 300;
+  line-height: 1;
+  margin: 0;
+  text-decoration: none;
+  color: var(--color-text-btn-idle);
+  transition: color 0.5s;
 }
 
-.login-submit:disabled {
+button.text-btn.login-submit:hover,
+button.text-btn.login-submit:focus-visible {
+  color: var(--color-bg);
+}
+
+button.text-btn.login-submit:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.login-secondary {
-  align-self: flex-start;
+button.text-btn.login-submit--inline {
+  position: static;
+  transform: none;
+  align-self: center;
+  margin-top: clamp(1rem, 0.75rem + 1.5vmin, 1.25rem);
+}
+
+.login-page .text-btn.login-secondary {
   font-size: clamp(0.85rem, 0.7rem + 1.2vmin, 0.95rem);
+  color: color-mix(in srgb, var(--color-text-inverse) 55%, transparent);
+}
+
+.login-page .text-btn.login-secondary:hover,
+.login-page .text-btn.login-secondary:focus-visible {
+  color: var(--color-text-inverse);
 }
 
 .login-error {
+  position: absolute;
+  bottom: calc(var(--page-bottom-control-offset) + 2rem);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: clamp(0.85rem, 0.7rem + 1.2vmin, 0.95rem);
-  color: var(--color-text-muted);
+  color: color-mix(in srgb, var(--color-text-inverse) 65%, transparent);
+  text-align: center;
 }

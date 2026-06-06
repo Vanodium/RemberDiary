@@ -38,6 +38,7 @@ function createLevelMonitor(stream, onPeak) {
 export function useVoiceRecorder({ onComplete }) {
   const [recording, setRecording] = useState(false);
   const [durationMs, setDurationMs] = useState(0);
+  const [audioDetected, setAudioDetected] = useState(false);
   const [error, setError] = useState(null);
 
   const recorderRef = useRef(null);
@@ -65,6 +66,7 @@ export function useVoiceRecorder({ onComplete }) {
 
     try {
       setError(null);
+      setAudioDetected(false);
       peakLevelRef.current = 0;
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
@@ -72,6 +74,9 @@ export function useVoiceRecorder({ onComplete }) {
 
       stopLevelMonitorRef.current = createLevelMonitor(stream, (peak) => {
         peakLevelRef.current = Math.max(peakLevelRef.current, peak);
+        if (peak >= SILENT_PEAK_THRESHOLD) {
+          setAudioDetected(true);
+        }
       });
 
       const mimeType = getSupportedMimeType();
@@ -130,6 +135,7 @@ export function useVoiceRecorder({ onComplete }) {
   const stop = useCallback(() => {
     clearTimer();
     setRecording(false);
+    setAudioDetected(false);
 
     const recorder = recorderRef.current;
     if (recorder?.state === 'recording') {
@@ -151,7 +157,7 @@ export function useVoiceRecorder({ onComplete }) {
     [clearTimer],
   );
 
-  return { recording, durationMs, error, start, stop };
+  return { recording, durationMs, audioDetected, error, start, stop };
 }
 
 export function formatDuration(ms) {

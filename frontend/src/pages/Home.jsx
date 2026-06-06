@@ -21,7 +21,7 @@ export default function Home() {
 
   const handleRecordingComplete = useCallback(async (recording) => {
     if (recording.silent) {
-      setStatus('no audio detected — check mic');
+      setStatus('Check the microphone');
       setTimeout(() => setStatus(null), 4000);
       return;
     }
@@ -45,9 +45,24 @@ export default function Home() {
     setTimeout(() => setStatus(null), 2000);
   }, []);
 
-  const { recording, durationMs, error, start, stop } = useVoiceRecorder({
+  const { recording, durationMs, audioDetected, error, start, stop } = useVoiceRecorder({
     onComplete: handleRecordingComplete,
   });
+
+  const toggleRecording = useCallback(() => {
+    if (recording) {
+      stop();
+      return;
+    }
+
+    void start();
+  }, [recording, start, stop]);
+
+  const leftBottomText = recording
+    ? audioDetected
+      ? formatDuration(durationMs)
+      : 'Check the microphone'
+    : (error ?? status);
 
   const { weekday, monthDay } = formatToday();
 
@@ -58,20 +73,12 @@ export default function Home() {
           <button
             type="button"
             className={`mic-btn${recording ? ' mic-btn--recording' : ''}`}
-            aria-label={recording ? 'Recording' : 'Record voice note'}
+            aria-label={recording ? 'Stop recording' : 'Record voice note'}
             aria-pressed={recording}
-            onPointerDown={start}
-            onPointerUp={stop}
-            onPointerLeave={stop}
-            onPointerCancel={stop}
+            onClick={toggleRecording}
           >
             <MicIcon />
           </button>
-          {recording && (
-            <p className="home-duration" aria-live="polite">
-              {formatDuration(durationMs)}
-            </p>
-          )}
         </div>
       </div>
 
@@ -85,16 +92,20 @@ export default function Home() {
             timeline
           </Link>
         </div>
-        <button type="button" className="text-btn home-settings" onClick={openSettings}>
-          settings
-        </button>
       </div>
 
-      {(status || error) && (
-        <p className="home-status" role="status" aria-live="polite">
-          {error ?? status}
+      {leftBottomText && (
+        <p
+          className={recording && audioDetected ? 'home-duration' : 'home-status'}
+          role="status"
+          aria-live="polite"
+        >
+          {leftBottomText}
         </p>
       )}
+      <button type="button" className="text-btn home-settings" onClick={openSettings}>
+        settings
+      </button>
     </div>
   );
 }
