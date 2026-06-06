@@ -30,49 +30,41 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
   max-width: 100%;
 }
 
-.login-input-field {
-  display: inline-grid;
-  vertical-align: top;
-  min-width: var(--login-input-min-width);
-  max-width: 100%;
-}
-
-.login-input-sizer,
 .login-input {
-  grid-area: 1 / 1;
   font: inherit;
   line-height: 1;
-  text-align: center;
-}
-
-.login-input-sizer {
-  visibility: hidden;
-  white-space: pre;
-  padding: 0;
-}
-
-.login-input {
-  width: 100%;
-  min-width: 0;
   color: var(--color-text-inverse);
   background: transparent;
   border: none;
   padding: 0;
   outline: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.login-input::-webkit-scrollbar {
+  display: none;
 }
 
 .login-input::placeholder {
   color: color-mix(in srgb, var(--color-text-inverse) 45%, transparent);
 }
 
-.login-input-field--code .login-input-sizer,
-.login-input-field--code .login-input {
+.login-input--email {
+  width: min(var(--login-input-min-width), 100%);
+  text-align: center;
+}
+
+.login-input--code {
+  width: 6ch;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2em;
   padding-inline: 0.1em;
+  text-align: center;
 }
 
 button.text-btn.login-submit {
@@ -184,8 +176,15 @@ button.text-btn.login-submit:disabled {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.2em;
   padding-inline: 0.1em;
-  text-align: center;
+  text-align: start;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
   color: var(--color-text-inverse);
+}
+
+.login-exit-code::-webkit-scrollbar {
+  display: none;
 }
 
 .login-exit-submit {

@@ -147,7 +147,7 @@ export default function Timeline() {
       <div className="timeline-right">
         <section className="timeline-meta">
           {headerDateLines ? (
-            <Link to="/home" className="timeline-date">
+            <Link to="/home" className="text-btn timeline-date">
               {headerDateLines.weekday},<br />
               {headerDateLines.monthDay}
             </Link>

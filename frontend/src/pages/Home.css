@@ -1,8 +1,6 @@
 .home {
   --home-mic-size: var(--page-mic-size);
   --home-mic-icon-ratio: 0.3333;
-  --home-font-settings: clamp(1rem, 0.75rem + 2.5vmin, 1.35rem);
-
   min-height: 100vh;
   display: flex;
   position: relative;
@@ -49,7 +47,7 @@
   bottom: var(--page-bottom-control-offset);
   transform: translateX(-50%);
   line-height: 1;
-  font-size: var(--home-font-settings);
+  font-size: var(--page-bottom-font-size);
   font-weight: 300;
   margin: 0;
 }
@@ -76,7 +74,7 @@ button.text-btn.home-settings {
   left: 75%;
   transform: translateX(-50%);
   line-height: 1;
-  font-size: var(--home-font-settings);
+  font-size: var(--page-bottom-font-size);
   font-weight: 300;
   margin: 0;
   text-decoration: none;
@@ -152,7 +150,7 @@ button.text-btn.home-settings {
 
 .home-date {
   font-weight: 700;
-  font-size: var(--page-meta-font-size);
+  font-size: var(--page-meta-font-size-display);
   line-height: 1;
   text-align: left;
   color: var(--color-text);
@@ -161,7 +159,7 @@ button.text-btn.home-settings {
 
 a.text-btn.home-timeline {
   font-weight: 700;
-  font-size: var(--page-meta-font-size);
+  font-size: var(--page-meta-font-size-display);
   line-height: 1;
   text-align: left;
   text-decoration: none;

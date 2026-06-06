@@ -33,12 +33,14 @@ export default function SettingsSheet() {
 
   const handleLogout = () => {
     closeSettings();
+    setSettingsSheetPresent(false);
     logout();
     navigate('/');
   };
 
   const handleChangeAccount = () => {
     closeSettings();
+    setSettingsSheetPresent(false);
     logout();
     navigate('/login');
   };

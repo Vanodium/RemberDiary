@@ -16,6 +16,7 @@ export default function BottomSheet({
 
   useEffect(() => {
     onPresentChange?.(mounted);
+    return () => onPresentChange?.(false);
   }, [mounted, onPresentChange]);
 
   useEffect(() => {

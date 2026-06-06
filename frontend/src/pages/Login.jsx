@@ -1,29 +1,7 @@
-import { forwardRef, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Login.css';
-
-const AutoGrowInput = forwardRef(function AutoGrowInput(
-  { value, onChange, placeholder, className = '', fieldClassName = '', ...props },
-  ref,
-) {
-  return (
-    <div className={`login-input-field ${fieldClassName}`.trim()}>
-      <span className="login-input-sizer" aria-hidden="true">
-        {value || placeholder}
-      </span>
-      <input
-        ref={ref}
-        className={`login-input ${className}`.trim()}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        size={1}
-        {...props}
-      />
-    </div>
-  );
-});
 
 export default function Login({ onLoginSuccess }) {
   const { user, loading, requestCode, login } = useAuth();
@@ -91,9 +69,10 @@ export default function Login({ onLoginSuccess }) {
       {step === 'email' ? (
         <>
           <form id="login-email-form" className="login-form" onSubmit={handleSendCode}>
-            <AutoGrowInput
+            <input
               ref={emailInputRef}
               type="email"
+              className="login-input login-input--email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email"
@@ -115,10 +94,10 @@ export default function Login({ onLoginSuccess }) {
       ) : (
         <>
           <form id="login-code-form" className="login-form" onSubmit={handleVerify}>
-            <AutoGrowInput
+            <input
               id="login-code"
               type="text"
-              fieldClassName="login-input-field--code"
+              className="login-input login-input--code"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="code"
