@@ -43,7 +43,7 @@
 .calendar-row {
   display: flex;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: flex-start;
   gap: calc(var(--calendar-gap) * 1.5);
   min-width: calc(7 * var(--calendar-cell-size) + 6 * var(--calendar-gap));
 }
@@ -61,11 +61,6 @@
 
 .calendar-weekends {
   min-width: calc(2 * var(--calendar-cell-size) + 1 * var(--calendar-gap));
-}
-
-.calendar-row--first .calendar-workdays,
-.calendar-row--first .calendar-weekends {
-  justify-content: flex-end;
 }
 
 .calendar-cell {
@@ -97,6 +92,11 @@
   color: var(--color-text);
 }
 
+.calendar-cell--spacer {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .calendar-nav {
   margin-top: 0.65rem;
   display: flex;
@@ -118,13 +118,21 @@
   gap: var(--timeline-meta-gap);
 }
 
-a.text-btn.timeline-date {
+a.text-btn.timeline-date,
+.timeline-month {
   font-weight: 400;
   font-size: var(--timeline-font-date);
   line-height: 1.1;
   text-align: right;
   color: var(--color-text-muted);
+}
+
+a.text-btn.timeline-date {
   text-decoration: none;
+}
+
+.timeline-month {
+  margin: 0;
 }
 
 .timeline-title {
@@ -132,23 +140,6 @@ a.text-btn.timeline-date {
   font-weight: 700;
   line-height: 1;
   text-align: right;
-}
-
-.timeline-periods {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-.timeline-period-btn {
-  font-size: clamp(0.85rem, 0.7rem + 1.2vmin, 1rem);
-  font-weight: 400;
-  color: var(--color-text-faded);
-}
-
-.timeline-period-btn--ready {
-  font-weight: 700;
-  color: var(--color-text);
 }
 
 button.text-btn.timeline-settings {
@@ -173,6 +164,7 @@ button.text-btn.timeline-settings {
   }
 
   .timeline-date,
+  .timeline-month,
   .timeline-title {
     text-align: center;
   }

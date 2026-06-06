@@ -9,6 +9,8 @@ import {
   isDec31,
   isEndOfWeek,
   isLastDayOfMonth,
+  parseIsoDate,
+  toIsoDate,
 } from '../lib/periods.js';
 import { getUserById } from './auth.js';
 
@@ -26,7 +28,8 @@ Write 3–7 sentences in past tense — capture the most important moments and o
 Do not mention days, recordings, or that these were separate entries. Keep it concise and to the point.`,
 
   monthly: `You turn weekly journal recaps from one month into a single first-person monthly reflection.
-Write 7–12 sentences in past tense capture the most important moments and overall mood. Try to capture themes, growth, and the feel of the month.
+Write at least 7 sentences (aim for 7–12) in past tense. Cover the full month — key events, themes, growth, and overall mood.
+Your output must be longer and more comprehensive than any single weekly recap you were given.
 Do not mention weeks or that these were separate summaries.`,
 
   yearly: `You turn monthly journal reflections from one year into a single first-person year-in-review.
@@ -56,7 +59,33 @@ function explainOllamaError(err, body = '') {
   return err?.message ?? 'unknown error';
 }
 
-async function callOllama(tier, texts) {
+function formatUserContent(tier, texts, meta = {}) {
+  if (tier === 'monthly' && meta.year !== undefined && meta.month !== undefined) {
+    const monthLabel = new Date(meta.year, meta.month, 1).toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+    const weekCount = meta.weekCount ?? texts.length;
+    const body = texts
+      .map((text, index) => {
+        const label = index < weekCount ? `Week ${index + 1}` : 'Additional days';
+        return `--- ${label} ---\n${text}`;
+      })
+      .join('\n\n');
+    return `Create a monthly reflection for ${monthLabel} from these weekly recaps:\n\n${body}`;
+  }
+
+  if (tier === 'yearly' && meta.year !== undefined) {
+    const body = texts
+      .map((text, index) => `--- Month ${index + 1} ---\n${text}`)
+      .join('\n\n');
+    return `Create a year-in-review for ${meta.year} from these monthly reflections:\n\n${body}`;
+  }
+
+  return texts.join('\n\n');
+}
+
+async function callOllama(tier, texts, meta = {}) {
   if (texts.length === 0) return '';
 
   let res;
@@ -68,12 +97,12 @@ async function callOllama(tier, texts) {
         model: OLLAMA_MODEL,
         messages: [
           { role: 'system', content: PROMPTS[tier] },
-          { role: 'user', content: texts.join('\n\n') },
+          { role: 'user', content: formatUserContent(tier, texts, meta) },
         ],
         stream: false,
         options: {
           temperature: 0.6,
-          num_predict: tier === 'yearly' ? 320 : tier === 'monthly' ? 260 : tier === 'weekly' ? 220 : 180,
+          num_predict: tier === 'yearly' ? 500 : tier === 'monthly' ? 450 : tier === 'weekly' ? 220 : 180,
         },
       }),
     });
@@ -90,11 +119,11 @@ async function callOllama(tier, texts) {
   return data.message?.content?.trim() ?? '';
 }
 
-async function generateSummary(tier, texts) {
+async function generateSummary(tier, texts, meta = {}) {
   if (texts.length === 0) return '';
 
   try {
-    const content = await callOllama(tier, texts);
+    const content = await callOllama(tier, texts, meta);
     if (content) {
       console.log(`[summarize] ${tier} via ${OLLAMA_MODEL}`);
       return content;
@@ -162,6 +191,92 @@ function getWeeklySummariesInMonth(userId, year, month, endOfWeekDay, todayIso, 
   return weekEndDates.filter((d) => byDate.has(d)).map((d) => byDate.get(d));
 }
 
+function getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily) {
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const dates = Array.from({ length: daysInMonth }, (_, i) =>
+    toIsoDate(new Date(year, month, i + 1, 12, 0, 0)),
+  );
+  const placeholders = dates.map(() => '?').join(', ');
+
+  const rows = db
+    .prepare(
+      `SELECT date, content FROM summaries
+       WHERE user_id = ? AND date IN (${placeholders}) AND summary_type = 'daily'
+       ORDER BY date ASC`,
+    )
+    .all(userId, ...dates);
+
+  const byDate = new Map(rows.map((row) => [row.date, row.content]));
+
+  if (todayDaily && dates.includes(todayIso)) {
+    byDate.set(todayIso, todayDaily);
+  }
+
+  return dates.filter((d) => byDate.has(d)).map((d) => byDate.get(d));
+}
+
+function getOrphanDailiesAfterLastWeekEnd(
+  userId,
+  year,
+  month,
+  endOfWeekDay,
+  todayIso,
+  todayDaily,
+  todayType,
+) {
+  const weekEndDates = getWeekEndingDatesInMonth(year, month, endOfWeekDay);
+  const lastWeekEnd = weekEndDates.at(-1);
+  if (!lastWeekEnd) return [];
+
+  const monthEndIso = toIsoDate(new Date(year, month + 1, 0, 12, 0, 0));
+  if (lastWeekEnd >= monthEndIso) return [];
+
+  const dayAfter = parseIsoDate(lastWeekEnd);
+  dayAfter.setDate(dayAfter.getDate() + 1);
+  const startIso = toIsoDate(dayAfter);
+
+  return getDailySummariesInRange(
+    userId,
+    startIso,
+    monthEndIso,
+    todayIso,
+    todayType === 'daily' ? todayDaily : null,
+  );
+}
+
+function buildMonthlySources(userId, year, month, endOfWeekDay, todayIso, content, summaryType) {
+  const todayWeekly = summaryType === 'weekly' ? content : null;
+  const todayDaily = summaryType === 'daily' ? content : null;
+
+  const weeklies = getWeeklySummariesInMonth(
+    userId,
+    year,
+    month,
+    endOfWeekDay,
+    todayIso,
+    todayWeekly,
+  );
+
+  if (weeklies.length === 0) {
+    return {
+      sources: getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily),
+      weekCount: 0,
+    };
+  }
+
+  const orphans = getOrphanDailiesAfterLastWeekEnd(
+    userId,
+    year,
+    month,
+    endOfWeekDay,
+    todayIso,
+    todayDaily,
+    summaryType,
+  );
+
+  return { sources: [...weeklies, ...orphans], weekCount: weeklies.length };
+}
+
 function getMonthlySummariesInYear(userId, year, todayIso, todayMonthly) {
   const monthEndDates = getLastDaysOfMonthsInYear(year);
   const placeholders = monthEndDates.map(() => '?').join(', ');
@@ -226,16 +341,17 @@ export async function updateSummaryForDate(date, userId) {
   if (lastOfMonth) {
     const year = getYear(date);
     const month = getMonth(date);
-    const weeklies = getWeeklySummariesInMonth(
+    const { sources: monthlySources, weekCount } = buildMonthlySources(
       userId,
       year,
       month,
       endOfWeekDay,
       date,
-      summaryType === 'weekly' ? content : null,
+      content,
+      summaryType,
     );
-    if (weeklies.length > 0) {
-      content = await generateSummary('monthly', weeklies);
+    if (monthlySources.length > 0) {
+      content = await generateSummary('monthly', monthlySources, { year, month, weekCount });
       summaryType = 'monthly';
     }
   }
@@ -249,7 +365,7 @@ export async function updateSummaryForDate(date, userId) {
       summaryType === 'monthly' ? content : null,
     );
     if (monthlies.length > 0) {
-      content = await generateSummary('yearly', monthlies);
+      content = await generateSummary('yearly', monthlies, { year });
       summaryType = 'yearly';
     }
   }

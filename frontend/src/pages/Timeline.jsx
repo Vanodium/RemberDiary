@@ -1,13 +1,26 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useOverlay } from '../context/OverlayContext';
+import { useSummaries } from '../context/SummariesContext';
 import {
   buildTimelineMonthRows,
+  formatMonthYear,
   formatShortDate,
   toIsoDate,
 } from '../lib/calendar';
-import { useSummaries } from '../context/SummariesContext';
 import './Timeline.css';
+
+function leadingWorkdaySpacers(dates) {
+  if (dates.length === 0) return 0;
+  const dow = dates[0].getDay();
+  if (dow === 0 || dow === 6) return 0;
+  return dow - 1;
+}
+
+function leadingWeekendSpacers(dates) {
+  if (dates.length === 0) return 0;
+  return dates[0].getDay() === 0 ? 1 : 0;
+}
 
 export default function Timeline() {
   const { openSettings, openSummary } = useOverlay();
@@ -15,25 +28,23 @@ export default function Timeline() {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
-  const [selectedIso, setSelectedIso] = useState(toIsoDate(today));
+  const [selectedIso, setSelectedIso] = useState(null);
 
   const rows = useMemo(
     () => buildTimelineMonthRows(viewYear, viewMonth),
     [viewYear, viewMonth],
   );
 
-  const selectedDate = useMemo(() => new Date(`${selectedIso}T12:00:00`), [selectedIso]);
+  const selectedDate = useMemo(
+    () => (selectedIso ? new Date(`${selectedIso}T12:00:00`) : null),
+    [selectedIso],
+  );
 
   const shiftMonth = (delta) => {
     const next = new Date(viewYear, viewMonth + delta, 1);
-    const newYear = next.getFullYear();
-    const newMonth = next.getMonth();
-    const daysInNewMonth = new Date(newYear, newMonth + 1, 0).getDate();
-    const day = Math.min(selectedDate.getDate(), daysInNewMonth);
-
-    setViewYear(newYear);
-    setViewMonth(newMonth);
-    setSelectedIso(toIsoDate(new Date(newYear, newMonth, day)));
+    setViewYear(next.getFullYear());
+    setViewMonth(next.getMonth());
+    setSelectedIso(null);
   };
 
   const handleDaySelect = (date) => {
@@ -47,7 +58,7 @@ export default function Timeline() {
   const renderDay = (date) => {
     const iso = toIsoDate(date);
     const summary = hasSummary(iso);
-    const selected = iso === selectedIso;
+    const selected = selectedIso !== null && iso === selectedIso;
     const className = ['calendar-cell', summary && 'has-summary', selected && 'selected']
       .filter(Boolean)
       .join(' ');
@@ -71,15 +82,30 @@ export default function Timeline() {
       <div className="timeline-layout">
         <section className="calendar-section" aria-label="Calendar">
           <div className="calendar-rows">
-            {rows.map((row, index) => (
-              <div
-                key={`${viewYear}-${viewMonth}-w${row.workdays.map((d) => d.getDate()).join('-')}-e${row.weekends.map((d) => d.getDate()).join('-')}`}
-                className={`calendar-row${index === 0 ? ' calendar-row--first' : ''}`}
-              >
-                <div className="calendar-workdays">{row.workdays.map(renderDay)}</div>
-                <div className="calendar-weekends">{row.weekends.map(renderDay)}</div>
-              </div>
-            ))}
+            {rows.map((row, index) => {
+              const workdaySpacers = index === 0 ? leadingWorkdaySpacers(row.workdays) : 0;
+              const weekendSpacers = index === 0 ? leadingWeekendSpacers(row.weekends) : 0;
+
+              return (
+                <div
+                  key={`${viewYear}-${viewMonth}-w${row.workdays.map((d) => d.getDate()).join('-')}-e${row.weekends.map((d) => d.getDate()).join('-')}`}
+                  className="calendar-row"
+                >
+                  <div className="calendar-workdays">
+                    {Array.from({ length: workdaySpacers }, (_, i) => (
+                      <span key={`ws-${i}`} className="calendar-cell calendar-cell--spacer" aria-hidden="true" />
+                    ))}
+                    {row.workdays.map(renderDay)}
+                  </div>
+                  <div className="calendar-weekends">
+                    {Array.from({ length: weekendSpacers }, (_, i) => (
+                      <span key={`es-${i}`} className="calendar-cell calendar-cell--spacer" aria-hidden="true" />
+                    ))}
+                    {row.weekends.map(renderDay)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="calendar-nav">
@@ -93,9 +119,13 @@ export default function Timeline() {
         </section>
 
         <section className="timeline-meta">
-          <Link to="/home" className="text-btn timeline-date">
-            {formatShortDate(selectedDate)}
-          </Link>
+          {selectedDate ? (
+            <Link to="/home" className="text-btn timeline-date">
+              {formatShortDate(selectedDate)}
+            </Link>
+          ) : (
+            <p className="timeline-month">{formatMonthYear(viewYear, viewMonth)}</p>
+          )}
           <h1 className="timeline-title">timeline</h1>
         </section>
       </div>
