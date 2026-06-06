@@ -86,7 +86,6 @@ export default function SettingsSheet() {
         </label>
 
         <div className="settings-row settings-row--account">
-          <span>account</span>
           <div className="settings-account">
             <span>{user.email}</span>
             <button type="button" className="text-btn" onClick={handleChangeAccount}>

@@ -40,6 +40,14 @@ export default function Timeline() {
     [selectedIso],
   );
 
+  const headerDate = useMemo(() => {
+    if (selectedDate) return selectedDate;
+    const now = new Date();
+    const viewingCurrentMonth =
+      viewYear === now.getFullYear() && viewMonth === now.getMonth();
+    return viewingCurrentMonth ? now : null;
+  }, [selectedDate, viewYear, viewMonth]);
+
   const shiftMonth = (delta) => {
     const next = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(next.getFullYear());
@@ -119,9 +127,9 @@ export default function Timeline() {
         </section>
 
         <section className="timeline-meta">
-          {selectedDate ? (
+          {headerDate ? (
             <Link to="/home" className="text-btn timeline-date">
-              {formatShortDate(selectedDate)}
+              {formatShortDate(headerDate)}
             </Link>
           ) : (
             <p className="timeline-month">{formatMonthYear(viewYear, viewMonth)}</p>
