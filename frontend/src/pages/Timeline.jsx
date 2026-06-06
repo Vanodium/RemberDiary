@@ -146,18 +146,20 @@ export default function Timeline() {
 
       <div className="timeline-right">
         <section className="timeline-meta">
-          {headerDateLines ? (
-            <Link to="/home" className="text-btn timeline-date">
-              {headerDateLines.weekday},<br />
-              {headerDateLines.monthDay}
-            </Link>
-          ) : (
-            <p className="timeline-month">
-              {monthYearLines.month}
-              <br />
-              {monthYearLines.year}
-            </p>
-          )}
+          <Link to="/home" className="text-btn timeline-date">
+            {headerDateLines ? (
+              <>
+                {headerDateLines.weekday},<br />
+                {headerDateLines.monthDay}
+              </>
+            ) : (
+              <>
+                {monthYearLines.month}
+                <br />
+                {monthYearLines.year}
+              </>
+            )}
+          </Link>
           <h1 className="timeline-title">timeline</h1>
         </section>
       </div>

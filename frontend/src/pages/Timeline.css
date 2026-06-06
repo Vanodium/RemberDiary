@@ -156,15 +156,6 @@
   transition: color 0.5s;
 }
 
-.timeline-month {
-  font-weight: 700;
-  font-size: var(--page-meta-font-size-display);
-  line-height: 1;
-  text-align: left;
-  color: var(--color-text);
-  margin: 0;
-}
-
 a.text-btn.timeline-date {
   font-weight: 700;
   font-size: var(--page-meta-font-size-display);

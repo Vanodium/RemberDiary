@@ -11,7 +11,7 @@
   --color-text-inverse-muted: #4b5563;
   --color-start-idle: #d4d4d4;
   --color-start-hover: #ffffff;
-  --font-start-size: calc(128px * 0.9);
+  --font-start-size: calc(128px * 0.81);
   --font-start-family: Helvetica, Arial, sans-serif;
   --ease-parabola: cubic-bezier(0.45, 0.05, 0.55, 0.95);
   --duration-fill: 0.75s;
