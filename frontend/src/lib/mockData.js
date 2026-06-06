@@ -1,6 +1,5 @@
 export const mockUser = {
   email: 'you@example.com',
-  timezone: 'Europe/Moscow',
   endOfWeekDay: 'sun',
 };
 
