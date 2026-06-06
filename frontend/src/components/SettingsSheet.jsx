@@ -13,7 +13,7 @@ export default function SettingsSheet() {
   const navigate = useNavigate();
   const { user, logout, saveSettings } = useAuth();
   const { accentId, setAccentId } = useAccent();
-  const { settingsOpen, closeSettings, setSettingsSheetPresent } = useOverlay();
+  const { settingsOpen, closeSettings } = useOverlay();
   const [endOfWeekDay, setEndOfWeekDay] = useState('sun');
 
   useEffect(() => {
@@ -33,14 +33,12 @@ export default function SettingsSheet() {
 
   const handleLogout = () => {
     closeSettings();
-    setSettingsSheetPresent(false);
     logout();
     navigate('/');
   };
 
   const handleChangeAccount = () => {
     closeSettings();
-    setSettingsSheetPresent(false);
     logout();
     navigate('/login');
   };
@@ -51,7 +49,6 @@ export default function SettingsSheet() {
     <BottomSheet
       open={settingsOpen}
       onClose={closeSettings}
-      onPresentChange={setSettingsSheetPresent}
       labelledBy="settings-title"
       className="settings-sheet"
     >

@@ -1,18 +1,35 @@
+import { useCallback, useRef } from 'react';
 import { useOverlay } from '../context/OverlayContext';
 import { useSummaries } from '../context/SummariesContext';
 import { formatLongDate } from '../lib/calendar';
 import BottomSheet from './BottomSheet';
 
 export default function SummarySheet() {
-  const { summaryDate, closeSummary, setSummarySheetPresent } = useOverlay();
+  const {
+    summaryDate,
+    summaryOpen,
+    closeSummary,
+    clearSummaryDate,
+  } = useOverlay();
   const { getSummary } = useSummaries();
   const summary = summaryDate ? getSummary(summaryDate) : null;
+  const summaryOpenRef = useRef(summaryOpen);
+  summaryOpenRef.current = summaryOpen;
+
+  const handlePresentChange = useCallback(
+    (present) => {
+      // Only clear after the close animation — not when BottomSheet's mount
+      // effect cleanup fires while the sheet is still opening.
+      if (!present && !summaryOpenRef.current) clearSummaryDate();
+    },
+    [clearSummaryDate],
+  );
 
   return (
     <BottomSheet
-      open={Boolean(summaryDate && summary)}
+      open={summaryOpen && Boolean(summary)}
       onClose={closeSummary}
-      onPresentChange={setSummarySheetPresent}
+      onPresentChange={handlePresentChange}
       labelledBy="summary-title"
     >
       {summaryDate && summary ? (

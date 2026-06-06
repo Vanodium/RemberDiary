@@ -83,7 +83,7 @@ export function formatDateLines(date) {
 export function formatMonthYearLines(year, month) {
   const value = new Date(year, month, 1);
   return {
-    month: value.toLocaleDateString('en-US', { month: 'long' }),
+    month: value.toLocaleDateString('en-US', { month: 'short' }),
     year: value.toLocaleDateString('en-US', { year: 'numeric' }),
   };
 }

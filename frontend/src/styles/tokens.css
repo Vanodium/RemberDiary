@@ -28,7 +28,7 @@
   /* Shared home / timeline layout (1440×900 baseline) */
   --page-mic-size: clamp(9rem, 19.236vw, 17.3125rem); /* 277px */
   --page-meta-font-size: clamp(calc(3rem * 0.9), calc(8.889vw * 0.9), calc(8rem * 0.9));
-  --page-meta-font-size-display: calc(var(--page-meta-font-size) * 0.9);
+  --page-meta-font-size-display: calc(var(--page-meta-font-size) * 0.81);
   --page-bottom-font-size: clamp(1rem, 0.75rem + 2.5vmin, 1.35rem);
   --page-meta-gap: clamp(0.35rem, 0.25rem + 0.8vmin, 0.5rem);
   --page-bottom-control-offset: 10%;
