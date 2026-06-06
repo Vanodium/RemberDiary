@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ACCENT_OPTIONS } from '../lib/accentColors';
+import { useAccent } from '../context/AccentContext';
 import { useAuth } from '../context/AuthContext';
 import { useOverlay } from '../context/OverlayContext';
 import { formatTimezoneDisplay, WEEKDAY_OPTIONS } from '../lib/calendar';
@@ -10,6 +12,7 @@ import './sheets.css';
 export default function SettingsSheet() {
   const navigate = useNavigate();
   const { user, logout, saveSettings } = useAuth();
+  const { accentId, setAccentId } = useAccent();
   const { settingsOpen, closeSettings } = useOverlay();
   const [timezone, setTimezone] = useState('UTC');
   const [endOfWeekDay, setEndOfWeekDay] = useState('sun');
@@ -64,6 +67,24 @@ export default function SettingsSheet() {
       </h2>
 
       <div className="settings-rows">
+        <label className="settings-row settings-row--accent">
+          <span>accent</span>
+          <div className="accent-picker" role="radiogroup" aria-label="Accent color">
+            {ACCENT_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={accentId === option.id}
+                aria-label={option.label}
+                className={`accent-swatch${accentId === option.id ? ' accent-swatch--selected' : ''}`}
+                style={{ '--swatch-color': option.color }}
+                onClick={() => setAccentId(option.id)}
+              />
+            ))}
+          </div>
+        </label>
+
         <label className="settings-row">
           <span>timezone</span>
           <select value={timezone} onChange={(e) => handleTimezoneChange(e.target.value)}>

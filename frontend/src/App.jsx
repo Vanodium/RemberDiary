@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { AccentProvider } from './context/AccentContext';
 import { AuthProvider } from './context/AuthContext';
 import { OverlayProvider } from './context/OverlayContext';
 import { SummariesProvider } from './context/SummariesContext';
@@ -12,33 +13,35 @@ import Timeline from './pages/Timeline';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <SummariesProvider>
-        <OverlayProvider>
-          <Routes>
-            <Route path="/" element={<Main />} />
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/home"
-              element={
-                <ProtectedRoute>
-                  <Home />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/timeline"
-              element={
-                <ProtectedRoute>
-                  <Timeline />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-          <SettingsSheet />
-          <SummarySheet />
-        </OverlayProvider>
-      </SummariesProvider>
-    </AuthProvider>
+    <AccentProvider>
+      <AuthProvider>
+        <SummariesProvider>
+          <OverlayProvider>
+            <Routes>
+              <Route path="/" element={<Main />} />
+              <Route path="/login" element={<Login />} />
+              <Route
+                path="/home"
+                element={
+                  <ProtectedRoute>
+                    <Home />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/timeline"
+                element={
+                  <ProtectedRoute>
+                    <Timeline />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+            <SettingsSheet />
+            <SummarySheet />
+          </OverlayProvider>
+        </SummariesProvider>
+      </AuthProvider>
+    </AccentProvider>
   );
 }

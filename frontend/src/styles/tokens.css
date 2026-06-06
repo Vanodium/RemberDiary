@@ -1,7 +1,8 @@
 :root {
+  --color-accent: #1a1a1a;
   --color-bg: #ffffff;
-  --color-bg-inverse: #000000;
-  --color-text: #000000;
+  --color-bg-inverse: var(--color-accent);
+  --color-text: var(--color-accent);
   --color-text-muted: #9ca3af;
   --color-text-btn-idle: #5c5c5c;
   --color-text-faded: #d1d5db;
@@ -17,5 +18,5 @@
   --color-mic-idle: #5c5c5c;
   --font-family: system-ui, -apple-system, 'Segoe UI', Inter, Helvetica, sans-serif;
   --radius-sheet: 16px;
-  --shadow-recording: 0 14px 75px 0 rgba(0, 0, 0, 0.5);
+  --shadow-recording: 0 14px 75px 0 color-mix(in srgb, var(--color-accent) 50%, transparent);
 }
