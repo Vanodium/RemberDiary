@@ -13,9 +13,9 @@ router.post('/send-code', async (req, res, next) => {
   }
 });
 
-router.post('/verify-code', (req, res, next) => {
+router.post('/verify-code', async (req, res, next) => {
   try {
-    const result = verifyLoginCode(req.body.email, req.body.code);
+    const result = await verifyLoginCode(req.body.email, req.body.code);
     res.json(result);
   } catch (err) {
     if (err.message === 'Invalid code' || err.message.includes('expired') || err.message.includes('No code')) {
@@ -29,9 +29,9 @@ router.get('/me', requireAuth, (req, res) => {
   res.json({ user: req.user });
 });
 
-router.patch('/me', requireAuth, (req, res, next) => {
+router.patch('/me', requireAuth, async (req, res, next) => {
   try {
-    const user = updateUserSettings(req.user.id, {
+    const user = await updateUserSettings(req.user.id, {
       timezone: req.body.timezone,
       endOfWeekDay: req.body.endOfWeekDay,
     });

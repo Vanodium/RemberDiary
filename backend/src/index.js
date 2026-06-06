@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import db from './db/index.js';
 import authRouter from './routes/auth.js';
 import recordingsRouter from './routes/recordings.js';
 import summariesRouter from './routes/summaries.js';
@@ -22,6 +23,8 @@ app.use((err, _req, res, _next) => {
   console.error(err);
   res.status(500).json({ error: err.message ?? 'Internal server error' });
 });
+
+await db.initDb();
 
 const server = app.listen(PORT, () => {
   console.log(`Rember API listening on http://localhost:${PORT}`);

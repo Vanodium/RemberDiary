@@ -1,59 +1,58 @@
-function columnNames(db, table) {
-  return db.prepare(`PRAGMA table_info(${table})`).all().map((col) => col.name);
+async function columnNames(pool, table) {
+  const [rows] = await pool.execute(
+    `SELECT COLUMN_NAME AS name
+     FROM INFORMATION_SCHEMA.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?`,
+    [table],
+  );
+  return rows.map((col) => col.name);
 }
 
-export function addColumnIfMissing(db, table, column, definition) {
-  if (!columnNames(db, table).includes(column)) {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+export async function addColumnIfMissing(pool, table, column, definition) {
+  if (!(await columnNames(pool, table)).includes(column)) {
+    await pool.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
 
-function migrateSummariesForUsers(db) {
-  if (columnNames(db, 'summaries').includes('user_id')) return;
-
-  db.exec(`
-    CREATE TABLE summaries_user (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT NOT NULL,
-      date TEXT NOT NULL,
-      content TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now')),
-      UNIQUE(user_id, date)
-    );
-    DROP TABLE summaries;
-    ALTER TABLE summaries_user RENAME TO summaries;
-  `);
-}
-
-export function runMigrations(db) {
-  db.exec(`
+export async function runMigrations(pool) {
+  await pool.execute(`
     CREATE TABLE IF NOT EXISTS users (
-      id TEXT PRIMARY KEY,
-      email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-      timezone TEXT NOT NULL DEFAULT 'UTC',
-      end_of_week_day TEXT NOT NULL DEFAULT 'sun',
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS otp_codes (
-      email TEXT PRIMARY KEY COLLATE NOCASE,
-      code_hash TEXT NOT NULL,
-      expires_at TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
+      id VARCHAR(36) PRIMARY KEY,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      timezone VARCHAR(64) NOT NULL DEFAULT 'UTC',
+      end_of_week_day VARCHAR(8) NOT NULL DEFAULT 'sun',
+      created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+    )
   `);
 
-  addColumnIfMissing(db, 'recordings', 'recorded_date', 'TEXT');
-  addColumnIfMissing(db, 'recordings', 'transcript', 'TEXT');
-  addColumnIfMissing(db, 'recordings', 'transcript_status', "TEXT NOT NULL DEFAULT 'pending'");
-  addColumnIfMissing(db, 'recordings', 'user_id', 'TEXT');
+  await pool.execute(`
+    CREATE TABLE IF NOT EXISTS otp_codes (
+      email VARCHAR(255) PRIMARY KEY,
+      code_hash VARCHAR(64) NOT NULL,
+      expires_at VARCHAR(32) NOT NULL,
+      created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
+    )
+  `);
 
-  migrateSummariesForUsers(db);
-  addColumnIfMissing(db, 'summaries', 'summary_type', "TEXT NOT NULL DEFAULT 'daily'");
+  await addColumnIfMissing(pool, 'recordings', 'recorded_date', 'VARCHAR(10)');
+  await addColumnIfMissing(pool, 'recordings', 'transcript', 'TEXT');
+  await addColumnIfMissing(
+    pool,
+    'recordings',
+    'transcript_status',
+    "VARCHAR(16) NOT NULL DEFAULT 'pending'",
+  );
+  await addColumnIfMissing(pool, 'recordings', 'user_id', 'VARCHAR(36)');
+  await addColumnIfMissing(
+    pool,
+    'summaries',
+    'summary_type',
+    "VARCHAR(16) NOT NULL DEFAULT 'daily'",
+  );
 
-  db.prepare(
+  await pool.execute(
     `UPDATE recordings
-     SET recorded_date = substr(recorded_at, 1, 10)
+     SET recorded_date = SUBSTRING(recorded_at, 1, 10)
      WHERE recorded_date IS NULL`,
-  ).run();
+  );
 }
