@@ -4,7 +4,7 @@ import { formatLongDate } from '../lib/calendar';
 import BottomSheet from './BottomSheet';
 
 export default function SummarySheet() {
-  const { summaryDate, closeSummary } = useOverlay();
+  const { summaryDate, closeSummary, setSummarySheetPresent } = useOverlay();
   const { getSummary } = useSummaries();
   const summary = summaryDate ? getSummary(summaryDate) : null;
 
@@ -12,6 +12,7 @@ export default function SummarySheet() {
     <BottomSheet
       open={Boolean(summaryDate && summary)}
       onClose={closeSummary}
+      onPresentChange={setSummarySheetPresent}
       labelledBy="summary-title"
     >
       {summaryDate && summary ? (

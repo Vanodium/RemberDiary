@@ -13,7 +13,7 @@ export default function SettingsSheet() {
   const navigate = useNavigate();
   const { user, logout, saveSettings } = useAuth();
   const { accentId, setAccentId } = useAccent();
-  const { settingsOpen, closeSettings } = useOverlay();
+  const { settingsOpen, closeSettings, setSettingsSheetPresent } = useOverlay();
   const [endOfWeekDay, setEndOfWeekDay] = useState('sun');
 
   useEffect(() => {
@@ -46,7 +46,13 @@ export default function SettingsSheet() {
   if (!user) return null;
 
   return (
-    <BottomSheet open={settingsOpen} onClose={closeSettings} labelledBy="settings-title" className="settings-sheet">
+    <BottomSheet
+      open={settingsOpen}
+      onClose={closeSettings}
+      onPresentChange={setSettingsSheetPresent}
+      labelledBy="settings-title"
+      className="settings-sheet"
+    >
       <Link to="/home" className="settings-mic-badge" aria-label="Home" onClick={closeSettings}>
         <MicIcon />
       </Link>
@@ -94,16 +100,17 @@ export default function SettingsSheet() {
           </div>
         </div>
 
-        <div className="settings-actions">
-          <button type="button" className="text-btn" onClick={handleLogout}>
-            log out
-          </button>
+        <div className="settings-row settings-row--footer">
+          <div className="settings-footer">
+            <p className="settings-privacy">
+              Your recordings and summaries are private to your account. We don&apos;t sell your data.
+            </p>
+            <button type="button" className="text-btn" onClick={handleLogout}>
+              log out
+            </button>
+          </div>
         </div>
       </div>
-
-      <p className="settings-privacy">
-        Your recordings and summaries are private to your account. We don&apos;t sell your data.
-      </p>
     </BottomSheet>
   );
 }

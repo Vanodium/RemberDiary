@@ -37,6 +37,12 @@
 .calendar-section {
   display: flex;
   flex-direction: column;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-parabola);
+}
+
+.timeline-page--visible .calendar-section {
+  opacity: 1;
 }
 
 .calendar-rows {
@@ -173,12 +179,14 @@ a.timeline-date {
 }
 
 button.text-btn.timeline-settings {
-  position: absolute;
+  position: fixed;
   bottom: var(--page-bottom-control-offset);
-  left: 50%;
+  left: 75%;
   transform: translateX(-50%);
   font-size: var(--timeline-font-settings);
   font-weight: 300;
+  line-height: 1;
+  margin: 0;
   text-decoration: none;
 }
 

@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext';
 import './Login.css';
 
 const AutoGrowInput = forwardRef(function AutoGrowInput(
-  { value, onChange, placeholder, className = '', ...props },
+  { value, onChange, placeholder, className = '', fieldClassName = '', ...props },
   ref,
 ) {
   return (
-    <div className="login-input-field">
+    <div className={`login-input-field ${fieldClassName}`.trim()}>
       <span className="login-input-sizer" aria-hidden="true">
         {value || placeholder}
       </span>
@@ -25,15 +25,22 @@ const AutoGrowInput = forwardRef(function AutoGrowInput(
   );
 });
 
-export default function Login() {
+export default function Login({ onLoginSuccess }) {
   const { user, loading, requestCode, login } = useAuth();
   const [step, setStep] = useState('email');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [visible, setVisible] = useState(false);
+  const [pendingExit, setPendingExit] = useState(false);
 
   const emailInputRef = useRef(null);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -44,7 +51,7 @@ export default function Login() {
     }
   }, [step, loading]);
 
-  if (!loading && user) {
+  if (!loading && user && !pendingExit) {
     return <Navigate to="/home" replace />;
   }
 
@@ -68,6 +75,8 @@ export default function Login() {
     setSubmitting(true);
     try {
       await login(email, code);
+      setPendingExit(true);
+      onLoginSuccess?.(code);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -78,7 +87,7 @@ export default function Login() {
   const showSendCode = email.includes('@');
 
   return (
-    <div className="login-page">
+    <div className={`login-page${visible ? ' login-page--visible' : ''}`}>
       {step === 'email' ? (
         <>
           <form id="login-email-form" className="login-form" onSubmit={handleSendCode}>
@@ -92,27 +101,24 @@ export default function Login() {
               required
             />
           </form>
-          {showSendCode && (
-            <button
-              type="submit"
-              form="login-email-form"
-              className="text-btn login-submit"
-              disabled={submitting}
-            >
-              {submitting ? 'sending…' : 'send code'}
-            </button>
-          )}
+          <button
+            type="submit"
+            form="login-email-form"
+            className={`text-btn login-submit${showSendCode ? ' login-submit--visible' : ''}`}
+            disabled={submitting || !showSendCode}
+            aria-hidden={!showSendCode}
+            tabIndex={showSendCode ? 0 : -1}
+          >
+            {submitting ? 'sending…' : 'send code'}
+          </button>
         </>
       ) : (
-        <div className="login-main">
-          <form className="login-form" onSubmit={handleVerify}>
-            <p className="login-hint">
-              code sent to <span>{email}</span>
-            </p>
+        <>
+          <form id="login-code-form" className="login-form" onSubmit={handleVerify}>
             <AutoGrowInput
               id="login-code"
               type="text"
-              className="login-input--code"
+              fieldClassName="login-input-field--code"
               value={code}
               onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="code"
@@ -122,24 +128,30 @@ export default function Login() {
               maxLength={6}
               required
             />
-            {code.length >= 6 && (
-              <button type="submit" className="text-btn login-submit login-submit--inline" disabled={submitting}>
-                {submitting ? 'verifying…' : 'continue'}
-              </button>
-            )}
+          </form>
+          {code.length >= 6 ? (
+            <button
+              type="submit"
+              form="login-code-form"
+              className="text-btn login-submit login-submit--visible"
+              disabled={submitting}
+            >
+              {submitting ? 'verifying…' : 'continue'}
+            </button>
+          ) : (
             <button
               type="button"
-              className="text-btn login-secondary"
+              className="text-btn login-submit login-submit--visible"
               onClick={() => {
                 setStep('email');
                 setCode('');
                 setError(null);
               }}
             >
-              use a different email
+              change email
             </button>
-          </form>
-        </div>
+          )}
+        </>
       )}
 
       {error && (

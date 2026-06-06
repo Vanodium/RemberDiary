@@ -8,8 +8,7 @@
   position: absolute;
   inset: 0;
   border: none;
-  background: var(--color-surface-raised);
-  opacity: 0.85;
+  background: transparent;
   cursor: pointer;
 }
 
@@ -23,17 +22,12 @@
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  animation: sheet-slide-up 0.25s var(--ease-parabola);
+  transform: translateY(100%);
+  transition: transform var(--duration-sheet) var(--ease-parabola);
 }
 
-@keyframes sheet-slide-up {
-  from {
-    transform: translateY(100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
+.sheet-layer--visible .bottom-sheet {
+  transform: translateY(0);
 }
 
 .bottom-sheet-header {
@@ -142,26 +136,31 @@
   box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
 }
 
-.settings-row--account {
+.settings-row--account,
+.settings-row--footer {
   grid-template-columns: 1fr;
 }
 
-.settings-account {
+.settings-account,
+.settings-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
 
-.settings-actions {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem 0 0;
+.settings-row--footer {
+  border-bottom: none;
+  padding-bottom: 1.5rem;
 }
 
 .settings-privacy {
-  padding: 1rem 1.5rem 1.5rem;
+  margin: 0;
   font-size: 0.75rem;
   line-height: 1.5;
   color: var(--color-text-muted);
+}
+
+.settings-footer .text-btn {
+  flex-shrink: 0;
 }

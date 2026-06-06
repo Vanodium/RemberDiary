@@ -35,11 +35,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-parabola);
+}
+
+.home--visible .home-mic-wrap {
+  opacity: 1;
 }
 
 .home-duration,
-.home-status,
-button.text-btn.home-settings {
+.home-status {
   position: absolute;
   bottom: var(--page-bottom-control-offset);
   transform: translateX(-50%);
@@ -66,7 +71,14 @@ button.text-btn.home-settings {
 }
 
 button.text-btn.home-settings {
+  position: fixed;
+  bottom: var(--page-bottom-control-offset);
   left: 75%;
+  transform: translateX(-50%);
+  line-height: 1;
+  font-size: var(--home-font-settings);
+  font-weight: 300;
+  margin: 0;
   text-decoration: none;
 }
 

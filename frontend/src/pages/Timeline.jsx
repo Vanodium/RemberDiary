@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useOverlay } from '../context/OverlayContext';
 import { useSummaries } from '../context/SummariesContext';
@@ -30,6 +30,12 @@ export default function Timeline() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedIso, setSelectedIso] = useState(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const rows = useMemo(
     () => buildTimelineMonthRows(viewYear, viewMonth),
@@ -97,7 +103,7 @@ export default function Timeline() {
   };
 
   return (
-    <div className="timeline-page">
+    <div className={`timeline-page${visible ? ' timeline-page--visible' : ''}`}>
       <div className="timeline-left">
         <section className="calendar-section" aria-label="Calendar">
           <div className="calendar-rows">
@@ -154,10 +160,10 @@ export default function Timeline() {
           )}
           <h1 className="timeline-title">timeline</h1>
         </section>
-        <button type="button" className="text-btn timeline-settings" onClick={openSettings}>
-          settings
-        </button>
       </div>
+      <button type="button" className="text-btn timeline-settings" onClick={openSettings}>
+        settings
+      </button>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MicIcon from '../components/MicIcon';
 import { useOverlay } from '../context/OverlayContext';
@@ -18,6 +18,12 @@ function formatToday() {
 export default function Home() {
   const { openSettings } = useOverlay();
   const [status, setStatus] = useState(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
   const handleRecordingComplete = useCallback(async (recording) => {
     if (recording.silent) {
@@ -67,7 +73,7 @@ export default function Home() {
   const { weekday, monthDay } = formatToday();
 
   return (
-    <div className={`home${recording ? ' home--recording' : ''}`}>
+    <div className={`home${visible ? ' home--visible' : ''}${recording ? ' home--recording' : ''}`}>
       <div className="home-left">
         <div className="home-mic-wrap">
           <button

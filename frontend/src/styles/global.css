@@ -19,6 +19,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.app-content {
+  min-height: 100%;
+  opacity: 1;
+  transition: opacity var(--duration-sheet) var(--ease-parabola);
+}
+
+.app-content--dimmed {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
 /* Underlined text actions — accent-tinted default, full accent on hover */
 a.text-btn,
 button.text-btn {
