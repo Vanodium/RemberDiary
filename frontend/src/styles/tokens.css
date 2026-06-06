@@ -19,4 +19,9 @@
   --font-family: system-ui, -apple-system, 'Segoe UI', Inter, Helvetica, sans-serif;
   --radius-sheet: 16px;
   --shadow-recording: 0 14px 75px 0 color-mix(in srgb, var(--color-accent) 50%, transparent);
+
+  /* Shared home / timeline layout */
+  --page-main-gap: clamp(1.05rem, 0.925rem + 1.75vmin, 1.425rem);
+  --page-left-col-width: calc(7 * 1.15em + 6 * 0.35rem);
+  --page-meta-date-min-width: 15ch;
 }

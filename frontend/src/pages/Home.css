@@ -2,7 +2,6 @@
   /* Fluid layout tokens (base ~390px wide; scales with vmin) */
   --home-mic-size: clamp(7rem, 7.5rem + 2.5vmin, 8.25rem);
   --home-mic-icon-ratio: 0.3333;
-  --home-main-gap: clamp(1.75rem, 1.5rem + 3vmin, 2.4rem);
   --home-meta-gap: clamp(0.35rem, 0.25rem + 0.8vmin, 0.5rem);
   --home-font-date: clamp(1.6rem, 1.25rem + 3.5vmin, 2.25rem);
   --home-font-timeline: clamp(1.45rem, 1.1rem + 3.2vmin, 2.025rem);
@@ -23,22 +22,25 @@
 .home-main {
   display: flex;
   align-items: center;
-  gap: var(--home-main-gap);
-  margin-left: calc(-1 * var(--home-main-gap));
+  gap: var(--page-main-gap);
+  margin-left: calc(-1 * var(--page-main-gap));
 }
 
 .home-mic-wrap {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: clamp(0.5rem, 0.35rem + 1vmin, 0.75rem);
   flex-shrink: 0;
+  width: var(--page-left-col-width);
 }
 
 .home-duration {
+  width: var(--home-mic-size);
   font-size: clamp(0.85rem, 0.7rem + 1.5vmin, 1rem);
   font-variant-numeric: tabular-nums;
   color: var(--color-text-faded);
+  text-align: center;
   margin: 0;
 }
 
@@ -112,7 +114,9 @@
 .home-date {
   font-weight: bold;
   font-size: var(--home-font-date);
+  line-height: 1.1;
   text-align: right;
+  min-width: var(--page-meta-date-min-width);
 }
 
 a.text-btn.home-timeline {
@@ -138,5 +142,19 @@ button.text-btn.home-settings {
     flex-direction: column;
     text-align: center;
     margin-left: 0;
+  }
+
+  .home-mic-wrap {
+    width: auto;
+    align-items: center;
+  }
+
+  .home-meta {
+    align-items: center;
+  }
+
+  .home-date,
+  a.text-btn.home-timeline {
+    text-align: center;
   }
 }

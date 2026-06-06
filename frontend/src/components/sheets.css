@@ -112,15 +112,13 @@
   max-width: 100%;
 }
 
-.settings-row--accent {
-  grid-template-columns: 1fr;
-  gap: 0.65rem;
-}
-
 .accent-picker {
+  grid-column: 2;
+  justify-self: end;
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
+  justify-content: flex-end;
 }
 
 .accent-swatch {

@@ -1,5 +1,4 @@
 .timeline-page {
-  --timeline-main-gap: clamp(1.75rem, 1.5rem + 3vmin, 2.4rem);
   --timeline-meta-gap: clamp(0.35rem, 0.25rem + 0.8vmin, 0.5rem);
   --timeline-font-date: clamp(1.6rem, 1.25rem + 3.5vmin, 2.25rem);
   --timeline-font-title: clamp(1.45rem, 1.1rem + 3.2vmin, 2.025rem);
@@ -22,22 +21,31 @@
 .timeline-layout {
   display: flex;
   align-items: center;
-  gap: var(--timeline-main-gap);
-  margin-left: calc(-1 * var(--timeline-main-gap));
+  gap: var(--page-main-gap);
+  margin-left: calc(-1 * var(--page-main-gap));
 }
 
 .calendar-section {
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  width: var(--page-left-col-width);
 }
 
 .calendar-rows {
   --calendar-cell-size: 1.15em;
   --calendar-gap: 0.35rem;
+  --calendar-row-height: calc(1.2 * var(--timeline-font-cell));
+  --calendar-max-rows: 6;
+  --calendar-rows-min-height: calc(
+    var(--calendar-max-rows) * var(--calendar-row-height) + (var(--calendar-max-rows) - 1) * var(--calendar-gap)
+  );
 
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--calendar-gap);
+  min-height: var(--calendar-rows-min-height);
 }
 
 .calendar-row {
@@ -98,8 +106,9 @@
 }
 
 .calendar-nav {
-  margin-top: 0.65rem;
+  margin-top: 0.9rem;
   display: flex;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
@@ -127,6 +136,7 @@ a.text-btn.timeline-date,
   line-height: 1.1;
   text-align: right;
   color: var(--color-text-muted);
+  min-width: var(--page-meta-date-min-width);
 }
 
 a.text-btn.timeline-date {

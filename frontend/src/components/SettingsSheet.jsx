@@ -56,7 +56,7 @@ export default function SettingsSheet() {
       </h2>
 
       <div className="settings-rows">
-        <label className="settings-row settings-row--accent">
+        <label className="settings-row">
           <span>accent</span>
           <div className="accent-picker" role="radiogroup" aria-label="Accent color">
             {ACCENT_OPTIONS.map((option) => (
