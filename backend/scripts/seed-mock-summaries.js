@@ -1,59 +1,33 @@
 /**
- * Seeds mock daily summaries and generates weekly / monthly / yearly tiers.
+ * Seeds mock voice transcripts and generates summaries through the real pipeline
+ * (daily → weekly → monthly) using the app's Ollama prompts.
  *
  * Usage:
- *   node scripts/seed-mock-summaries.js
- *   MOCK_USER_EMAIL=you@example.com node scripts/seed-mock-summaries.js
+ *   npm run seed:mock --prefix backend
+ *   MOCK_USER_EMAIL=mock@data.rember npm run seed:mock --prefix backend
  *
- * Log in as that user, open Timeline → June 2026 (and December for yearly).
+ * Log in as that user, open Timeline → June 2026.
+ * Requires MySQL + Ollama (falls back to text concat if Ollama is offline).
  */
 
 import { randomUUID } from 'crypto';
 import db from '../src/db/index.js';
+import { getWeekEndingDatesInMonth } from '../src/lib/periods.js';
 import { updateSummaryForDate } from '../src/services/summarize.js';
+import { JUNE_2026_TRANSCRIPTS } from './mock-transcripts.js';
 
-const MOCK_USER_EMAIL = (process.env.MOCK_USER_EMAIL ?? 'mock@rember.test').trim().toLowerCase();
+const MOCK_USER_EMAIL = (process.env.MOCK_USER_EMAIL ?? 'mock@data.rember').trim().toLowerCase();
 const YEAR = Number(process.env.MOCK_YEAR ?? 2026);
+const END_OF_WEEK_DAY = process.env.MOCK_END_OF_WEEK ?? 'sun';
 
-const JUNE_DAILIES = {
-  [`${YEAR}-06-01`]: 'Kicked off June with an early run and a quiet breakfast. Felt focused going into the week.',
-  [`${YEAR}-06-02`]: 'Dense work day — three meetings back to back. Cooked pasta for dinner and called my sister.',
-  [`${YEAR}-06-03`]: 'Took a half-day and walked by the river. Read for an hour in the sun.',
-  [`${YEAR}-06-04`]: 'Gym in the morning, then deep work on a side project. Proud of the progress.',
-  [`${YEAR}-06-05`]: 'Coffee with an old friend. We talked about moving cities and starting something new.',
-  [`${YEAR}-06-06`]: 'Rainy Saturday. Cleaned the apartment and watched a film.',
-  [`${YEAR}-06-07`]: 'Slow Sunday — farmers market, meal prep, early night.',
-  [`${YEAR}-06-08`]: 'Back to routine. Commuted to the office and finished a long-overdue task.',
-  [`${YEAR}-06-09`]: 'Felt sluggish but pushed through. Evening yoga helped.',
-  [`${YEAR}-06-10`]: 'Presented at work and got good feedback. Celebrated with takeout.',
-  [`${YEAR}-06-11`]: 'Wrote morning pages for the first time in weeks. Want to keep it up.',
-  [`${YEAR}-06-12`]: 'Lunch outside with coworkers. Afternoon dragged — too many tabs open.',
-  [`${YEAR}-06-13`]: 'Bike ride at sunset. Listened to a podcast about habits.',
-  [`${YEAR}-06-14`]: 'Family video call. Mom shared old photos — nostalgic afternoon.',
-  [`${YEAR}-06-15`]: 'Started learning a new song on guitar. Fingers hurt but it felt good.',
-  [`${YEAR}-06-16`]: 'Doctor appointment in the morning, then groceries. Ordinary but fine day.',
-  [`${YEAR}-06-17`]: 'Big deadline met. Collapsed on the couch with no guilt.',
-  [`${YEAR}-06-18`]: 'Walked instead of scrolling. Noticed blossoms I had missed all spring.',
-  [`${YEAR}-06-19`]: 'Dinner party at a neighbor\'s. Laughed more than I have in months.',
-  [`${YEAR}-06-20`]: 'Solo morning at a café. Planned the next two weeks in a notebook.',
-  [`${YEAR}-06-21`]: 'Hike with friends. Legs tired, head clear.',
-  [`${YEAR}-06-22`]: 'Caught up on sleep. Did laundry and answered lingering emails.',
-  [`${YEAR}-06-23`]: 'Tried a new recipe — mediocre results, still fun.',
-  [`${YEAR}-06-24`]: 'Work conflict resolved. Relieved it didn\'t linger.',
-  [`${YEAR}-06-25`]: 'Long walk after work. Thought about taking a short trip in July.',
-  [`${YEAR}-06-26`]: 'Rain again. Stayed in and reorganized my desk drawers.',
-  [`${YEAR}-06-27`]: 'Movie night alone. Needed the quiet.',
-  [`${YEAR}-06-28`]: 'Brunch and bookstore. Bought one novel I might actually read.',
-};
-
-function findOrCreateUser(email) {
-  let row = db
-    .prepare('SELECT id, email FROM users WHERE email = ? COLLATE NOCASE')
+async function findOrCreateUser(email) {
+  let row = await db
+    .prepare('SELECT id, email FROM users WHERE email = ?')
     .get(email);
 
   if (!row) {
     const id = randomUUID();
-    db.prepare('INSERT INTO users (id, email) VALUES (?, ?)').run(id, email);
+    await db.prepare('INSERT INTO users (id, email) VALUES (?, ?)').run(id, email);
     row = { id, email };
     console.log(`Created user ${email}`);
   } else {
@@ -63,91 +37,59 @@ function findOrCreateUser(email) {
   return row;
 }
 
-function clearSummaries(userId) {
-  db.prepare('DELETE FROM summaries WHERE user_id = ?').run(userId);
+async function clearUserData(userId) {
+  await db.prepare('DELETE FROM summaries WHERE user_id = ?').run(userId);
+  await db.prepare('DELETE FROM recordings WHERE user_id = ?').run(userId);
 }
 
-function insertDaily(userId, date, content) {
-  db.prepare(
-    `INSERT INTO summaries (user_id, date, content, summary_type) VALUES (?, ?, ?, 'daily')
-     ON CONFLICT(user_id, date) DO UPDATE SET content = excluded.content, summary_type = 'daily'`,
-  ).run(userId, date, content);
+async function insertTranscript(userId, date, transcript, index) {
+  const id = randomUUID();
+  const hour = 8 + (index % 10);
+  const minute = (index * 17) % 60;
+  const recordedAt = `${date}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00.000Z`;
+
+  await db
+    .prepare(
+      `INSERT INTO recordings
+         (id, filename, mime_type, duration_ms, recorded_at, recorded_date, transcript_status, user_id, transcript)
+       VALUES (?, ?, 'audio/webm', ?, ?, ?, 'done', ?, ?)`,
+    )
+    .run(id, `${id}.webm`, 45_000 + index * 12_000, recordedAt, date, userId, transcript);
 }
 
-async function seedMonth(userId, dailies, weekEnds, monthEnd) {
-  for (const [date, content] of Object.entries(dailies)) {
-    insertDaily(userId, date, content);
+async function seedTranscripts(userId, transcriptMap) {
+  let count = 0;
+  for (const [date, notes] of Object.entries(transcriptMap)) {
+    for (let i = 0; i < notes.length; i += 1) {
+      await insertTranscript(userId, date, notes[i], count);
+      count += 1;
+    }
   }
-  console.log(`  inserted ${Object.keys(dailies).length} daily summaries`);
-
-  for (const weekEnd of weekEnds) {
-    console.log(`  generating weekly for ${weekEnd}…`);
-    await updateSummaryForDate(weekEnd, userId);
-  }
-
-  if (monthEnd) {
-    console.log(`  generating monthly for ${monthEnd}…`);
-    await updateSummaryForDate(monthEnd, userId);
-  }
+  console.log(`  inserted ${count} mock recordings across ${Object.keys(transcriptMap).length} days`);
 }
 
-function insertTyped(userId, date, content, summaryType) {
-  db.prepare(
-    `INSERT INTO summaries (user_id, date, content, summary_type) VALUES (?, ?, ?, ?)
-     ON CONFLICT(user_id, date) DO UPDATE SET content = excluded.content, summary_type = excluded.summary_type`,
-  ).run(userId, date, content, summaryType);
-}
-
-// June monthly is generated by seedMonth — do not include here or it overwrites the real rollup.
-const MOCK_MONTHLIES = {
-  [`${YEAR}-01-31`]: 'January was quiet — lots of planning, little action. Started the gym habit again.',
-  [`${YEAR}-02-28`]: 'February flew by. A short trip broke the winter monotony.',
-  [`${YEAR}-03-31`]: 'Spring energy picked up. Social life felt fuller than winter.',
-  [`${YEAR}-04-30`]: 'April brought a work pivot. Stressful but clarifying.',
-  [`${YEAR}-05-31`]: 'May was warm and outward-facing — more time outside, less screen time.',
-  [`${YEAR}-07-31`]: 'July was travel-heavy. Came back tired but inspired.',
-  [`${YEAR}-08-31`]: 'August slowed down. Read two books and cooked more.',
-  [`${YEAR}-09-30`]: 'September felt like a second new year. Reorganized priorities.',
-  [`${YEAR}-10-31`]: 'October was productive. Shipped something I had postponed.',
-  [`${YEAR}-11-30`]: 'November turned inward. Grateful for small routines.',
-  [`${YEAR}-12-31`]: 'December closed the loop — reflection, family, and quiet hope for next year.',
-};
-
-async function seedYearly(userId) {
-  let inserted = 0;
-  for (const [date, content] of Object.entries(MOCK_MONTHLIES)) {
-    const existing = db
-      .prepare(
-        `SELECT length(content) AS len FROM summaries
-         WHERE user_id = ? AND date = ? AND summary_type = 'monthly'`,
-      )
-      .get(userId, date);
-    if (existing?.len > content.length) continue;
-    insertTyped(userId, date, content, 'monthly');
-    inserted += 1;
+async function generateSummariesForDates(userId, dates) {
+  const sorted = [...dates].sort();
+  for (const date of sorted) {
+    console.log(`  summarizing ${date}…`);
+    await updateSummaryForDate(date, userId);
   }
-  console.log(`  inserted ${inserted} monthly summaries (skipped months already seeded)`);
-
-  console.log(`  generating yearly for ${YEAR}-12-31…`);
-  await updateSummaryForDate(`${YEAR}-12-31`, userId);
 }
 
 async function main() {
-  const user = findOrCreateUser(MOCK_USER_EMAIL);
-  clearSummaries(user.id);
+  await db.initDb();
 
-  console.log('\nSeeding June…');
-  await seedMonth(user.id, JUNE_DAILIES, [
-    `${YEAR}-06-07`,
-    `${YEAR}-06-14`,
-    `${YEAR}-06-21`,
-    `${YEAR}-06-28`,
-  ], `${YEAR}-06-30`);
+  const user = await findOrCreateUser(MOCK_USER_EMAIL);
+  await clearUserData(user.id);
 
-  console.log('\nSeeding December + yearly…');
-  await seedYearly(user.id);
+  console.log('\nSeeding voice transcripts for June…');
+  await seedTranscripts(user.id, JUNE_2026_TRANSCRIPTS);
 
-  const counts = db
+  const dates = Object.keys(JUNE_2026_TRANSCRIPTS);
+  console.log('\nGenerating summaries via app prompts (daily → weekly → monthly)…');
+  await generateSummariesForDates(user.id, dates);
+
+  const counts = await db
     .prepare(
       `SELECT summary_type AS type, COUNT(*) AS count
        FROM summaries WHERE user_id = ?
@@ -155,13 +97,17 @@ async function main() {
     )
     .all(user.id);
 
+  const weekEnds = getWeekEndingDatesInMonth(YEAR, 5, END_OF_WEEK_DAY);
+
   console.log('\n── seed complete ──');
   console.log(`User: ${MOCK_USER_EMAIL}`);
   console.log('Counts:', Object.fromEntries(counts.map((r) => [r.type, r.count])));
   console.log('\nLog in with this email, then open Timeline:');
-  console.log(`  • June ${YEAR} — daily dots + week / month buttons`);
-  console.log(`  • December ${YEAR} — yearly button`);
+  console.log(`  • June ${YEAR} — daily dots Mon–Sat, weekly on ${weekEnds.join(', ')}`);
+  console.log(`  • June 30 — monthly summary`);
   console.log('OTP prints in the backend console after send-code.\n');
+
+  process.exit(0);
 }
 
 main().catch((err) => {

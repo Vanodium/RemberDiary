@@ -137,22 +137,22 @@ async function generateSummary(tier, texts, meta = {}) {
   return fallbackSummary(texts);
 }
 
-function getTranscriptsForDate(userId, date) {
-  return db
+async function getTranscriptsForDate(userId, date) {
+  const rows = await db
     .prepare(
       `SELECT transcript FROM recordings
        WHERE user_id = ? AND recorded_date = ? AND transcript_status = 'done' AND transcript IS NOT NULL
        ORDER BY recorded_at ASC`,
     )
-    .all(userId, date)
-    .map((row) => row.transcript);
+    .all(userId, date);
+  return rows.map((row) => row.transcript);
 }
 
-function getDailySummariesInRange(userId, start, end, todayIso, todayDaily) {
+async function getDailySummariesInRange(userId, start, end, todayIso, todayDaily) {
   const dates = datesBetween(start, end);
   const placeholders = dates.map(() => '?').join(', ');
 
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT date, content FROM summaries
        WHERE user_id = ? AND date IN (${placeholders}) AND summary_type = 'daily'
@@ -169,12 +169,12 @@ function getDailySummariesInRange(userId, start, end, todayIso, todayDaily) {
   return dates.filter((d) => byDate.has(d)).map((d) => byDate.get(d));
 }
 
-function getWeeklySummariesInMonth(userId, year, month, endOfWeekDay, todayIso, todayWeekly) {
+async function getWeeklySummariesInMonth(userId, year, month, endOfWeekDay, todayIso, todayWeekly) {
   const weekEndDates = getWeekEndingDatesInMonth(year, month, endOfWeekDay);
   if (weekEndDates.length === 0) return [];
 
   const placeholders = weekEndDates.map(() => '?').join(', ');
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT date, content FROM summaries
        WHERE user_id = ? AND date IN (${placeholders}) AND summary_type = 'weekly'
@@ -191,14 +191,14 @@ function getWeeklySummariesInMonth(userId, year, month, endOfWeekDay, todayIso, 
   return weekEndDates.filter((d) => byDate.has(d)).map((d) => byDate.get(d));
 }
 
-function getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily) {
+async function getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily) {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const dates = Array.from({ length: daysInMonth }, (_, i) =>
     toIsoDate(new Date(year, month, i + 1, 12, 0, 0)),
   );
   const placeholders = dates.map(() => '?').join(', ');
 
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT date, content FROM summaries
        WHERE user_id = ? AND date IN (${placeholders}) AND summary_type = 'daily'
@@ -215,7 +215,7 @@ function getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily) 
   return dates.filter((d) => byDate.has(d)).map((d) => byDate.get(d));
 }
 
-function getOrphanDailiesAfterLastWeekEnd(
+async function getOrphanDailiesAfterLastWeekEnd(
   userId,
   year,
   month,
@@ -244,11 +244,11 @@ function getOrphanDailiesAfterLastWeekEnd(
   );
 }
 
-function buildMonthlySources(userId, year, month, endOfWeekDay, todayIso, content, summaryType) {
+async function buildMonthlySources(userId, year, month, endOfWeekDay, todayIso, content, summaryType) {
   const todayWeekly = summaryType === 'weekly' ? content : null;
   const todayDaily = summaryType === 'daily' ? content : null;
 
-  const weeklies = getWeeklySummariesInMonth(
+  const weeklies = await getWeeklySummariesInMonth(
     userId,
     year,
     month,
@@ -259,12 +259,12 @@ function buildMonthlySources(userId, year, month, endOfWeekDay, todayIso, conten
 
   if (weeklies.length === 0) {
     return {
-      sources: getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily),
+      sources: await getAllDailySummariesInMonth(userId, year, month, todayIso, todayDaily),
       weekCount: 0,
     };
   }
 
-  const orphans = getOrphanDailiesAfterLastWeekEnd(
+  const orphans = await getOrphanDailiesAfterLastWeekEnd(
     userId,
     year,
     month,
@@ -277,11 +277,11 @@ function buildMonthlySources(userId, year, month, endOfWeekDay, todayIso, conten
   return { sources: [...weeklies, ...orphans], weekCount: weeklies.length };
 }
 
-function getMonthlySummariesInYear(userId, year, todayIso, todayMonthly) {
+async function getMonthlySummariesInYear(userId, year, todayIso, todayMonthly) {
   const monthEndDates = getLastDaysOfMonthsInYear(year);
   const placeholders = monthEndDates.map(() => '?').join(', ');
 
-  const rows = db
+  const rows = await db
     .prepare(
       `SELECT date, content FROM summaries
        WHERE user_id = ? AND date IN (${placeholders}) AND summary_type = 'monthly'
@@ -298,25 +298,27 @@ function getMonthlySummariesInYear(userId, year, todayIso, todayMonthly) {
   return monthEndDates.filter((d) => byDate.has(d)).map((d) => byDate.get(d));
 }
 
-function upsertSummary(userId, date, content, summaryType) {
-  db.prepare(
-    `INSERT INTO summaries (user_id, date, content, summary_type) VALUES (?, ?, ?, ?)
-     ON CONFLICT(user_id, date) DO UPDATE SET
-       content = excluded.content,
-       summary_type = excluded.summary_type`,
-  ).run(userId, date, content, summaryType);
+async function upsertSummary(userId, date, content, summaryType) {
+  await db
+    .prepare(
+      `INSERT INTO summaries (user_id, date, content, summary_type) VALUES (?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         content = VALUES(content),
+         summary_type = VALUES(summary_type)`,
+    )
+    .run(userId, date, content, summaryType);
 }
 
-function deleteSummary(userId, date) {
-  db.prepare('DELETE FROM summaries WHERE user_id = ? AND date = ?').run(userId, date);
+async function deleteSummary(userId, date) {
+  await db.prepare('DELETE FROM summaries WHERE user_id = ? AND date = ?').run(userId, date);
 }
 
 export async function updateSummaryForDate(date, userId) {
-  const user = getUserById(userId);
+  const user = await getUserById(userId);
   if (!user) return null;
 
   const endOfWeekDay = user.endOfWeekDay ?? 'sun';
-  const transcripts = getTranscriptsForDate(userId, date);
+  const transcripts = await getTranscriptsForDate(userId, date);
 
   let content = null;
   let summaryType = 'daily';
@@ -331,7 +333,7 @@ export async function updateSummaryForDate(date, userId) {
 
   if (endOfWeek) {
     const { start, end } = getWeekRange(date, endOfWeekDay);
-    const weekDailies = getDailySummariesInRange(userId, start, end, date, content);
+    const weekDailies = await getDailySummariesInRange(userId, start, end, date, content);
     if (weekDailies.length > 0) {
       content = await generateSummary('weekly', weekDailies);
       summaryType = 'weekly';
@@ -341,7 +343,7 @@ export async function updateSummaryForDate(date, userId) {
   if (lastOfMonth) {
     const year = getYear(date);
     const month = getMonth(date);
-    const { sources: monthlySources, weekCount } = buildMonthlySources(
+    const { sources: monthlySources, weekCount } = await buildMonthlySources(
       userId,
       year,
       month,
@@ -358,7 +360,7 @@ export async function updateSummaryForDate(date, userId) {
 
   if (yearEnd) {
     const year = getYear(date);
-    const monthlies = getMonthlySummariesInYear(
+    const monthlies = await getMonthlySummariesInYear(
       userId,
       year,
       date,
@@ -371,11 +373,11 @@ export async function updateSummaryForDate(date, userId) {
   }
 
   if (!content) {
-    deleteSummary(userId, date);
+    await deleteSummary(userId, date);
     return null;
   }
 
-  upsertSummary(userId, date, content, summaryType);
+  await upsertSummary(userId, date, content, summaryType);
   console.log(`\n── ${summaryType} summary ${date} ──\n${content}\n`);
   return content;
 }

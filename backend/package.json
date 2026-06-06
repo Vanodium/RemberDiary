@@ -9,7 +9,7 @@
     "seed:mock": "node scripts/seed-mock-summaries.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.9.0",
+    "mysql2": "^3.14.1",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.3",

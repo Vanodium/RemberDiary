@@ -13,10 +13,10 @@ const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'base';
 const WHISPER_LANGUAGE = process.env.WHISPER_LANGUAGE ?? 'en';
 const SILENCE_MEAN_DB = Number(process.env.WHISPER_SILENCE_DB ?? -45);
 
-function saveTranscript(id, status, text = null) {
-  db.prepare(
-    `UPDATE recordings SET transcript_status = ?, transcript = ? WHERE id = ?`,
-  ).run(status, text, id);
+async function saveTranscript(id, status, text = null) {
+  await db
+    .prepare(`UPDATE recordings SET transcript_status = ?, transcript = ? WHERE id = ?`)
+    .run(status, text, id);
 }
 
 async function convertToWav(inputPath, outputPath) {
@@ -104,7 +104,7 @@ async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDat
 
     const meanVolume = await measureMeanVolume(wavPath);
     if (meanVolume !== null && meanVolume < SILENCE_MEAN_DB) {
-      saveTranscript(id, 'silent');
+      await saveTranscript(id, 'silent');
       console.log(
         `\n── transcript ${id} (${recordedAt}) ──\n[silent recording — mean ${meanVolume} dB]\n`,
       );
@@ -115,19 +115,19 @@ async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDat
     const text = readTranscript(outDir, wavPath);
 
     if (!text) {
-      saveTranscript(id, 'empty');
+      await saveTranscript(id, 'empty');
       console.log(`\n── transcript ${id} (${recordedAt}) ──\n[no speech detected]\n`);
       return;
     }
 
-    saveTranscript(id, 'done', text);
+    await saveTranscript(id, 'done', text);
     console.log(`\n── transcript ${id} (${recordedAt}) ──\n${text}\n`);
 
     if (userId) {
       await updateDailySummary(date, userId);
     }
   } catch (err) {
-    saveTranscript(id, 'failed');
+    await saveTranscript(id, 'failed');
     throw err;
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
