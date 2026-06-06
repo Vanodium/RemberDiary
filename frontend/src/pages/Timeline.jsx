@@ -126,16 +126,16 @@ export default function Timeline() {
               );
             })}
           </div>
-
-          <div className="calendar-nav">
-            <button type="button" className="text-btn calendar-nav-btn" onClick={() => shiftMonth(-1)}>
-              &lt;
-            </button>
-            <button type="button" className="text-btn calendar-nav-btn" onClick={() => shiftMonth(1)}>
-              &gt;
-            </button>
-          </div>
         </section>
+
+        <div className="calendar-nav">
+          <button type="button" className="text-btn calendar-nav-btn" onClick={() => shiftMonth(-1)}>
+            &lt;
+          </button>
+          <button type="button" className="text-btn calendar-nav-btn" onClick={() => shiftMonth(1)}>
+            &gt;
+          </button>
+        </div>
       </div>
 
       <div className="timeline-right">

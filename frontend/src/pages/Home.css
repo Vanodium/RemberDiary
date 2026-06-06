@@ -24,9 +24,10 @@
 }
 
 .home-right {
-  display: grid;
-  grid-template-rows: 1fr auto 1fr;
+  position: relative;
+  display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .home-mic-wrap {
@@ -103,8 +104,6 @@
 }
 
 .home-meta {
-  grid-row: 2;
-  justify-self: center;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -148,9 +147,10 @@ a.text-btn.home-timeline {
 }
 
 button.text-btn.home-settings {
-  grid-row: 3;
-  justify-self: center;
-  align-self: center;
+  position: absolute;
+  bottom: var(--page-bottom-control-offset);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: var(--home-font-settings);
   font-weight: 300;
   text-decoration: none;

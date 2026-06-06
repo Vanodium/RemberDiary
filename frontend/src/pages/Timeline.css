@@ -17,6 +17,10 @@
 }
 
 .timeline-left {
+  --calendar-cell-size: 1.15em;
+  --calendar-gap: 0.35rem;
+
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -24,9 +28,10 @@
 }
 
 .timeline-right {
-  display: grid;
-  grid-template-rows: 1fr auto 1fr;
+  position: relative;
+  display: flex;
   align-items: center;
+  justify-content: center;
 }
 
 .calendar-section {
@@ -35,8 +40,6 @@
 }
 
 .calendar-rows {
-  --calendar-cell-size: 1.15em;
-  --calendar-gap: 0.35rem;
   --calendar-row-height: calc(1.2 * var(--timeline-font-cell));
   --calendar-max-rows: 6;
   --calendar-rows-min-height: calc(
@@ -108,9 +111,12 @@
 }
 
 .calendar-nav {
-  margin-top: 0.9rem;
+  position: absolute;
+  bottom: var(--page-bottom-control-offset);
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 0.75rem;
 }
 
@@ -132,8 +138,6 @@
 }
 
 .timeline-meta {
-  grid-row: 2;
-  justify-self: center;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -169,9 +173,10 @@ a.timeline-date {
 }
 
 button.text-btn.timeline-settings {
-  grid-row: 3;
-  justify-self: center;
-  align-self: center;
+  position: absolute;
+  bottom: var(--page-bottom-control-offset);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: var(--timeline-font-settings);
   font-weight: 300;
   text-decoration: none;
