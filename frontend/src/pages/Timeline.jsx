@@ -4,7 +4,8 @@ import { useOverlay } from '../context/OverlayContext';
 import { useSummaries } from '../context/SummariesContext';
 import {
   buildTimelineMonthRows,
-  formatMonthYear,
+  formatDateLines,
+  formatMonthYearLines,
   formatShortDate,
   toIsoDate,
 } from '../lib/calendar';
@@ -48,6 +49,16 @@ export default function Timeline() {
     return viewingCurrentMonth ? now : null;
   }, [selectedDate, viewYear, viewMonth]);
 
+  const headerDateLines = useMemo(
+    () => (headerDate ? formatDateLines(headerDate) : null),
+    [headerDate],
+  );
+
+  const monthYearLines = useMemo(
+    () => formatMonthYearLines(viewYear, viewMonth),
+    [viewYear, viewMonth],
+  );
+
   const shiftMonth = (delta) => {
     const next = new Date(viewYear, viewMonth + delta, 1);
     setViewYear(next.getFullYear());
@@ -87,7 +98,7 @@ export default function Timeline() {
 
   return (
     <div className="timeline-page">
-      <div className="timeline-layout">
+      <div className="timeline-left">
         <section className="calendar-section" aria-label="Calendar">
           <div className="calendar-rows">
             {rows.map((row, index) => {
@@ -125,22 +136,28 @@ export default function Timeline() {
             </button>
           </div>
         </section>
+      </div>
 
+      <div className="timeline-right">
         <section className="timeline-meta">
-          {headerDate ? (
-            <Link to="/home" className="text-btn timeline-date">
-              {formatShortDate(headerDate)}
+          {headerDateLines ? (
+            <Link to="/home" className="timeline-date">
+              {headerDateLines.weekday},<br />
+              {headerDateLines.monthDay}
             </Link>
           ) : (
-            <p className="timeline-month">{formatMonthYear(viewYear, viewMonth)}</p>
+            <p className="timeline-month">
+              {monthYearLines.month}
+              <br />
+              {monthYearLines.year}
+            </p>
           )}
           <h1 className="timeline-title">timeline</h1>
         </section>
+        <button type="button" className="text-btn timeline-settings" onClick={openSettings}>
+          settings
+        </button>
       </div>
-
-      <button type="button" className="text-btn timeline-settings" onClick={openSettings}>
-        settings
-      </button>
     </div>
   );
 }

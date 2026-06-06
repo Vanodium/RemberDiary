@@ -1,38 +1,39 @@
 .home {
-  /* Fluid layout tokens (base ~390px wide; scales with vmin) */
-  --home-mic-size: clamp(7rem, 7.5rem + 2.5vmin, 8.25rem);
+  --home-mic-size: var(--page-mic-size);
   --home-mic-icon-ratio: 0.3333;
-  --home-meta-gap: clamp(0.35rem, 0.25rem + 0.8vmin, 0.5rem);
-  --home-font-date: clamp(1.6rem, 1.25rem + 3.5vmin, 2.25rem);
-  --home-font-timeline: clamp(1.45rem, 1.1rem + 3.2vmin, 2.025rem);
   --home-font-settings: clamp(1rem, 0.75rem + 2.5vmin, 1.35rem);
-  --home-padding: clamp(1.25rem, 3vmin, 2rem);
-  --home-settings-bottom: 10%;
 
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   position: relative;
-  padding: var(--home-padding);
   background: var(--color-bg);
 }
 
-.home-main {
+.home-left,
+.home-right {
+  flex: 1;
+  width: 50%;
+  min-height: 100vh;
+}
+
+.home-left {
   display: flex;
   align-items: center;
-  gap: var(--page-main-gap);
-  margin-left: calc(-1 * var(--page-main-gap));
+  justify-content: center;
+  background: var(--color-accent);
+}
+
+.home-right {
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  align-items: center;
 }
 
 .home-mic-wrap {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: clamp(0.5rem, 0.35rem + 1vmin, 0.75rem);
-  flex-shrink: 0;
-  width: var(--page-left-col-width);
 }
 
 .home-duration {
@@ -46,8 +47,8 @@
 
 .home-status {
   position: absolute;
-  bottom: calc(var(--home-settings-bottom) + 2.5rem);
-  left: 50%;
+  bottom: 1.5rem;
+  left: 25%;
   transform: translateX(-50%);
   margin: 0;
   font-size: clamp(0.8rem, 0.65rem + 1.2vmin, 0.95rem);
@@ -61,7 +62,7 @@
   border-radius: 50%;
   border: none;
   background: var(--color-text-btn-idle);
-  color: var(--color-text-inverse);
+  color: var(--color-accent);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -78,18 +79,36 @@
 
 .mic-btn:hover {
   background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
 }
 
 .mic-btn--recording {
   background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
   box-shadow: var(--shadow-recording);
 }
 
+.home-left .home-duration {
+  color: var(--color-text-faded);
+}
+
+.home-left .mic-btn:hover {
+  background: var(--color-bg);
+  color: var(--color-accent);
+}
+
+.home-left .mic-btn--recording {
+  background: var(--color-bg);
+  color: var(--color-accent);
+}
+
 .home-meta {
+  grid-row: 2;
+  justify-self: center;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: var(--home-meta-gap);
+  align-items: flex-start;
+  gap: var(--page-meta-gap);
 }
 
 .home-date,
@@ -112,49 +131,51 @@
 }
 
 .home-date {
-  font-weight: bold;
-  font-size: var(--home-font-date);
-  line-height: 1.1;
-  text-align: right;
-  min-width: var(--page-meta-date-min-width);
+  font-weight: 700;
+  font-size: var(--page-meta-font-size);
+  line-height: 1;
+  text-align: left;
+  color: var(--color-text);
+  margin: 0;
 }
 
 a.text-btn.home-timeline {
-  font-weight: bold;
-  font-size: var(--home-font-timeline);
+  font-weight: 700;
+  font-size: var(--page-meta-font-size);
   line-height: 1;
-  text-align: right;
+  text-align: left;
   text-decoration: none;
 }
 
 button.text-btn.home-settings {
-  position: absolute;
-  bottom: var(--home-settings-bottom);
-  left: 50%;
-  transform: translateX(-50%);
+  grid-row: 3;
+  justify-self: center;
+  align-self: center;
   font-size: var(--home-font-settings);
   font-weight: 300;
   text-decoration: none;
 }
 
-@media (max-width: 480px) {
-  .home-main {
+@media (max-width: 640px) {
+  .home {
     flex-direction: column;
-    text-align: center;
-    margin-left: 0;
   }
 
-  .home-mic-wrap {
-    width: auto;
-    align-items: center;
+  .home-left,
+  .home-right {
+    width: 100%;
+    min-height: auto;
   }
 
-  .home-meta {
-    align-items: center;
+  .home-left {
+    min-height: 45vh;
   }
 
-  .home-date,
-  a.text-btn.home-timeline {
-    text-align: center;
+  .home-right {
+    min-height: 55vh;
+  }
+
+  .home-status {
+    left: 50%;
   }
 }

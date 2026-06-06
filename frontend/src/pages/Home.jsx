@@ -9,9 +9,10 @@ import './Home.css';
 
 function formatToday() {
   const now = new Date();
-  const weekday = now.toLocaleDateString('en-US', { weekday: 'short' });
-  const monthDay = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${weekday}, ${monthDay}`;
+  return {
+    weekday: now.toLocaleDateString('en-US', { weekday: 'short' }),
+    monthDay: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  };
 }
 
 export default function Home() {
@@ -48,9 +49,11 @@ export default function Home() {
     onComplete: handleRecordingComplete,
   });
 
+  const { weekday, monthDay } = formatToday();
+
   return (
     <div className={`home${recording ? ' home--recording' : ''}`}>
-      <div className="home-main">
+      <div className="home-left">
         <div className="home-mic-wrap">
           <button
             type="button"
@@ -70,13 +73,21 @@ export default function Home() {
             </p>
           )}
         </div>
+      </div>
 
+      <div className="home-right">
         <div className="home-meta">
-          <p className="home-date">{formatToday()}</p>
+          <p className="home-date">
+            {weekday},<br />
+            {monthDay}
+          </p>
           <Link to="/timeline" className="text-btn home-timeline">
             timeline
           </Link>
         </div>
+        <button type="button" className="text-btn home-settings" onClick={openSettings}>
+          settings
+        </button>
       </div>
 
       {(status || error) && (
@@ -84,10 +95,6 @@ export default function Home() {
           {error ?? status}
         </p>
       )}
-
-      <button type="button" className="text-btn home-settings" onClick={openSettings}>
-        settings
-      </button>
     </div>
   );
 }

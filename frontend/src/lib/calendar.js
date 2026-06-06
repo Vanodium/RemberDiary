@@ -73,6 +73,21 @@ export function formatShortDate(date) {
   return `${weekday}, ${monthDay}`;
 }
 
+export function formatDateLines(date) {
+  return {
+    weekday: date.toLocaleDateString('en-US', { weekday: 'short' }),
+    monthDay: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+  };
+}
+
+export function formatMonthYearLines(year, month) {
+  const value = new Date(year, month, 1);
+  return {
+    month: value.toLocaleDateString('en-US', { month: 'long' }),
+    year: value.toLocaleDateString('en-US', { year: 'numeric' }),
+  };
+}
+
 export function formatLongDate(date) {
   return date.toLocaleDateString('en-US', {
     weekday: 'short',

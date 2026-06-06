@@ -75,7 +75,7 @@
   height: 56px;
   border-radius: 50%;
   background: var(--color-text-btn-idle);
-  color: var(--color-text-inverse);
+  color: var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;

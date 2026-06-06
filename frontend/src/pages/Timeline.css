@@ -1,35 +1,37 @@
 .timeline-page {
-  --timeline-meta-gap: clamp(0.35rem, 0.25rem + 0.8vmin, 0.5rem);
-  --timeline-font-date: clamp(1.6rem, 1.25rem + 3.5vmin, 2.25rem);
-  --timeline-font-title: clamp(1.45rem, 1.1rem + 3.2vmin, 2.025rem);
   --timeline-font-cell: clamp(0.8rem, 0.7rem + 0.5vmin, 0.9375rem);
   --timeline-font-nav: clamp(0.85rem, 0.75rem + 0.6vmin, 1rem);
   --timeline-font-settings: clamp(1rem, 0.75rem + 2.5vmin, 1.35rem);
-  --timeline-padding: clamp(1.25rem, 3vmin, 2rem);
-  --timeline-settings-bottom: 10%;
 
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   position: relative;
-  padding: var(--timeline-padding);
   background: var(--color-bg);
 }
 
-.timeline-layout {
+.timeline-left,
+.timeline-right {
+  flex: 1;
+  width: 50%;
+  min-height: 100vh;
+}
+
+.timeline-left {
   display: flex;
   align-items: center;
-  gap: var(--page-main-gap);
-  margin-left: calc(-1 * var(--page-main-gap));
+  justify-content: center;
+  background: var(--color-accent);
+}
+
+.timeline-right {
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  align-items: center;
 }
 
 .calendar-section {
-  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  width: var(--page-left-col-width);
 }
 
 .calendar-rows {
@@ -120,64 +122,78 @@
   text-decoration: none;
 }
 
+.timeline-left .calendar-cell.has-summary,
+.timeline-left .calendar-cell.selected {
+  color: var(--color-text-inverse);
+}
+
+.timeline-left .calendar-nav-btn {
+  color: var(--color-text-faded);
+}
+
 .timeline-meta {
-  position: relative;
-  z-index: 1;
+  grid-row: 2;
+  justify-self: center;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: var(--timeline-meta-gap);
+  align-items: flex-start;
+  gap: var(--page-meta-gap);
 }
 
-a.text-btn.timeline-date,
+.timeline-page .text-btn {
+  color: var(--color-text-btn-idle);
+  transition: color 0.5s;
+}
+
+.timeline-date,
 .timeline-month {
-  font-weight: 400;
-  font-size: var(--timeline-font-date);
-  line-height: 1.1;
-  text-align: right;
-  color: var(--color-text-muted);
-  min-width: var(--page-meta-date-min-width);
-}
-
-a.text-btn.timeline-date {
-  text-decoration: none;
-}
-
-.timeline-month {
+  font-weight: 700;
+  font-size: var(--page-meta-font-size);
+  line-height: 1;
+  text-align: left;
+  color: var(--color-text-btn-idle);
   margin: 0;
 }
 
+a.timeline-date {
+  text-decoration: none;
+}
+
 .timeline-title {
-  font-size: var(--timeline-font-title);
+  font-size: var(--page-meta-font-size);
   font-weight: 700;
   line-height: 1;
-  text-align: right;
+  text-align: left;
+  margin: 0;
+  color: var(--color-accent);
 }
 
 button.text-btn.timeline-settings {
-  position: absolute;
-  bottom: var(--timeline-settings-bottom);
-  left: 50%;
-  transform: translateX(-50%);
+  grid-row: 3;
+  justify-self: center;
+  align-self: center;
   font-size: var(--timeline-font-settings);
   font-weight: 300;
   text-decoration: none;
 }
 
-@media (max-width: 480px) {
-  .timeline-layout {
+@media (max-width: 640px) {
+  .timeline-page {
     flex-direction: column;
-    margin-left: 0;
-    text-align: center;
   }
 
-  .timeline-meta {
-    align-items: center;
+  .timeline-left,
+  .timeline-right {
+    width: 100%;
+    min-height: auto;
   }
 
-  .timeline-date,
-  .timeline-month,
-  .timeline-title {
-    text-align: center;
+  .timeline-left {
+    min-height: 45vh;
+    padding: clamp(1.25rem, 3vmin, 2rem);
+  }
+
+  .timeline-right {
+    min-height: 55vh;
   }
 }

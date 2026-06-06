@@ -4,7 +4,8 @@
   --color-bg-inverse: var(--color-accent);
   --color-text: var(--color-accent);
   --color-text-muted: #9ca3af;
-  --color-text-btn-idle: #5c5c5c;
+  --color-accent-light: color-mix(in srgb, var(--color-accent) 38%, white);
+  --color-text-btn-idle: var(--color-accent-light);
   --color-text-faded: #d1d5db;
   --color-text-inverse: #ffffff;
   --color-text-inverse-muted: #4b5563;
@@ -15,13 +16,13 @@
   --ease-parabola: cubic-bezier(0.45, 0.05, 0.55, 0.95);
   --duration-fill: 0.75s;
   --color-surface-raised: #e5e7eb;
-  --color-mic-idle: #5c5c5c;
+  --color-mic-idle: var(--color-accent-light);
   --font-family: system-ui, -apple-system, 'Segoe UI', Inter, Helvetica, sans-serif;
   --radius-sheet: 16px;
   --shadow-recording: 0 14px 75px 0 color-mix(in srgb, var(--color-accent) 50%, transparent);
 
-  /* Shared home / timeline layout */
-  --page-main-gap: clamp(1.05rem, 0.925rem + 1.75vmin, 1.425rem);
-  --page-left-col-width: calc(7 * 1.15em + 6 * 0.35rem);
-  --page-meta-date-min-width: 15ch;
+  /* Shared home / timeline layout (1440×900 baseline) */
+  --page-mic-size: clamp(9rem, 19.236vw, 17.3125rem); /* 277px */
+  --page-meta-font-size: clamp(3rem, 8.889vw, 8rem); /* 128px */
+  --page-meta-gap: clamp(0.35rem, 0.25rem + 0.8vmin, 0.5rem);
 }
