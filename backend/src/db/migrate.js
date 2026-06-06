@@ -49,6 +49,7 @@ export function runMigrations(db) {
   addColumnIfMissing(db, 'recordings', 'user_id', 'TEXT');
 
   migrateSummariesForUsers(db);
+  addColumnIfMissing(db, 'summaries', 'summary_type', "TEXT NOT NULL DEFAULT 'daily'");
 
   db.prepare(
     `UPDATE recordings

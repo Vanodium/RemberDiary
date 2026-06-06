@@ -134,6 +134,23 @@ a.text-btn.timeline-date {
   text-align: right;
 }
 
+.timeline-periods {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.timeline-period-btn {
+  font-size: clamp(0.85rem, 0.7rem + 1.2vmin, 1rem);
+  font-weight: 400;
+  color: var(--color-text-faded);
+}
+
+.timeline-period-btn--ready {
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 button.text-btn.timeline-settings {
   position: absolute;
   bottom: var(--timeline-settings-bottom);

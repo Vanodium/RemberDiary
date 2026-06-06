@@ -102,6 +102,51 @@ export function formatTimezoneDisplay(timezone) {
   }
 }
 
+const END_OF_WEEK_MAP = { sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6 };
+
+export function getWeekRange(dateIso, endOfWeekDay = 'sun') {
+  const endDow = END_OF_WEEK_MAP[endOfWeekDay] ?? 0;
+  const date = new Date(`${dateIso}T12:00:00`);
+  const dow = date.getDay();
+  const daysToEnd = (endDow - dow + 7) % 7;
+
+  const weekEnd = new Date(date);
+  weekEnd.setDate(date.getDate() + daysToEnd);
+
+  const weekStart = new Date(weekEnd);
+  weekStart.setDate(weekEnd.getDate() - 6);
+
+  return { start: toIsoDate(weekStart), end: toIsoDate(weekEnd) };
+}
+
+export function weekKey(dateIso, endOfWeekDay = 'sun') {
+  return getWeekRange(dateIso, endOfWeekDay).start;
+}
+
+export function monthKey(dateIso) {
+  return dateIso.slice(0, 7);
+}
+
+export function formatWeekRange(startIso, endIso) {
+  const start = new Date(`${startIso}T12:00:00`);
+  const end = new Date(`${endIso}T12:00:00`);
+  const startLabel = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endLabel = end.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${startLabel} – ${endLabel}`;
+}
+
+export function formatMonthLabel(monthKeyValue) {
+  const [year, month] = monthKeyValue.split('-').map(Number);
+  return new Date(year, month - 1, 1).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
 export const WEEKDAY_OPTIONS = [
   { value: 'mon', label: 'monday' },
   { value: 'tue', label: 'tuesday' },

@@ -4,23 +4,32 @@ const OverlayContext = createContext(null);
 
 export function OverlayProvider({ children }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [summaryDate, setSummaryDate] = useState(null);
+  const [summaryView, setSummaryView] = useState(null);
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
-  const openSummary = useCallback((date) => setSummaryDate(date), []);
-  const closeSummary = useCallback(() => setSummaryDate(null), []);
+
+  const openSummary = useCallback((date) => {
+    setSummaryView({ type: 'day', key: date });
+  }, []);
+
+  const openPeriodSummary = useCallback((type, key) => {
+    setSummaryView({ type, key });
+  }, []);
+
+  const closeSummary = useCallback(() => setSummaryView(null), []);
 
   const value = useMemo(
     () => ({
       settingsOpen,
-      summaryDate,
+      summaryView,
       openSettings,
       closeSettings,
       openSummary,
+      openPeriodSummary,
       closeSummary,
     }),
-    [settingsOpen, summaryDate, openSettings, closeSettings, openSummary, closeSummary],
+    [settingsOpen, summaryView, openSettings, closeSettings, openSummary, openPeriodSummary, closeSummary],
   );
 
   return <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>;
