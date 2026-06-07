@@ -4,10 +4,13 @@ import os from 'os';
 import path from 'path';
 import { promisify } from 'util';
 import db from '../db/index.js';
+import { getGroqWhisperModel, groqTranscribe, isGroqConfigured } from './groq.js';
 import { updateDailySummary } from './summarize.js';
 
 const execFileAsync = promisify(execFile);
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY?.trim();
+const OPENAI_WHISPER_MODEL = process.env.OPENAI_WHISPER_MODEL ?? 'whisper-1';
 const WHISPER_BIN = process.env.WHISPER_BIN ?? 'whisper';
 const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'small';
 const WHISPER_LANGUAGE = process.env.WHISPER_LANGUAGE ?? 'en';
@@ -98,46 +101,108 @@ function readTranscript(outputDir, wavPath) {
   return fs.readFileSync(txtPath, 'utf8').trim();
 }
 
-async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDate, userId }) {
+async function transcribeWithOpenAI(audioPath, mimeType) {
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not set');
+  }
+
+  const audioBuffer = fs.readFileSync(audioPath);
+  const file = new File([audioBuffer], path.basename(audioPath), {
+    type: mimeType ?? 'audio/webm',
+  });
+  const form = new FormData();
+  form.append('file', file);
+  form.append('model', OPENAI_WHISPER_MODEL);
+  form.append('language', WHISPER_LANGUAGE);
+
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+    body: form,
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`OpenAI transcription failed (${res.status}): ${body}`);
+  }
+
+  const data = await res.json();
+  return data.text?.trim() ?? '';
+}
+
+async function transcribeWithLocalWhisper(audioPath) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'rember-whisper-'));
   const wavPath = path.join(tmpDir, 'input.wav');
   const outDir = path.join(tmpDir, 'out');
   fs.mkdirSync(outDir);
-
-  const date = recordedDate ?? recordedAt.slice(0, 10);
 
   try {
     await convertToWav(audioPath, wavPath);
 
     const meanVolume = await measureMeanVolume(wavPath);
     if (meanVolume !== null && meanVolume < SILENCE_MEAN_DB) {
-      await saveTranscript(id, 'silent');
-      console.log(
-        `\n── transcript ${id} (${recordedAt}) ──\n[silent recording — mean ${meanVolume} dB]\n`,
-      );
-      return;
+      return { status: 'silent', text: null, detail: `mean ${meanVolume} dB` };
     }
 
     await runWhisper(wavPath, outDir);
-    const text = readTranscript(outDir, wavPath);
+    return { status: 'done', text: readTranscript(outDir, wavPath) };
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+}
 
-    if (!text) {
-      await saveTranscript(id, 'empty');
-      console.log(`\n── transcript ${id} (${recordedAt}) ──\n[no speech detected]\n`);
+async function finishTranscript({ id, recordedAt, recordedDate, userId, text, status, detail }) {
+  const date = recordedDate ?? recordedAt.slice(0, 10);
+
+  if (status === 'silent') {
+    await saveTranscript(id, 'silent');
+    console.log(`\n── transcript ${id} (${recordedAt}) ──\n[silent recording — ${detail}]\n`);
+    return;
+  }
+
+  if (!text) {
+    await saveTranscript(id, 'empty');
+    console.log(`\n── transcript ${id} (${recordedAt}) ──\n[no speech detected]\n`);
+    return;
+  }
+
+  await saveTranscript(id, 'done', text);
+  console.log(`\n── transcript ${id} (${recordedAt}) ──\n${text}\n`);
+
+  if (userId) {
+    await updateDailySummary(date, userId);
+  }
+}
+
+async function transcribeRecordingAsync(audioPath, { id, recordedAt, recordedDate, userId, mimeType }) {
+  try {
+    if (isGroqConfigured()) {
+      const text = await groqTranscribe(audioPath, mimeType);
+      console.log(`[transcribe] ${id} via ${getGroqWhisperModel()}`);
+      await finishTranscript({ id, recordedAt, recordedDate, userId, text, status: 'done' });
       return;
     }
 
-    await saveTranscript(id, 'done', text);
-    console.log(`\n── transcript ${id} (${recordedAt}) ──\n${text}\n`);
-
-    if (userId) {
-      await updateDailySummary(date, userId);
+    if (OPENAI_API_KEY) {
+      const text = await transcribeWithOpenAI(audioPath, mimeType);
+      console.log(`[transcribe] ${id} via ${OPENAI_WHISPER_MODEL}`);
+      await finishTranscript({ id, recordedAt, recordedDate, userId, text, status: 'done' });
+      return;
     }
+
+    const result = await transcribeWithLocalWhisper(audioPath);
+    await finishTranscript({
+      id,
+      recordedAt,
+      recordedDate,
+      userId,
+      text: result.text,
+      status: result.status,
+      detail: result.detail,
+    });
   } catch (err) {
     await saveTranscript(id, 'failed');
     throw err;
-  } finally {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 

@@ -115,6 +115,10 @@ export async function initDb() {
 
   const isLocal = poolConfig.host === 'localhost' || poolConfig.host === '127.0.0.1';
 
+  console.log(
+    `MySQL connecting to ${poolConfig.host}:${poolConfig.port} (database: ${poolConfig.database}, ssl: ${Boolean(poolConfig.ssl)})`,
+  );
+
   await withRetries(async () => {
     if (isLocal) {
       await ensureDatabase();

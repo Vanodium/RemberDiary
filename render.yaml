@@ -11,6 +11,7 @@
 # After deploy, set MYSQL_* on the API service.
 # Render free tier blocks SMTP (ports 25/465/587) — use Brevo over HTTPS:
 # BREVO_API_KEY, EMAIL_FROM (sender must be verified in Brevo).
+# Transcription + summaries on free tier: GROQ_API_KEY from console.groq.com/keys.
 
 services:
   - type: web
@@ -43,4 +44,6 @@ services:
       - key: BREVO_API_KEY
         sync: false
       - key: EMAIL_FROM
+        sync: false
+      - key: GROQ_API_KEY
         sync: false

@@ -13,6 +13,7 @@ import {
   toIsoDate,
 } from '../lib/periods.js';
 import { getUserById } from './auth.js';
+import { getGroqChatModel, groqChat, isGroqConfigured } from './groq.js';
 
 const OLLAMA_HOST = (process.env.OLLAMA_HOST ?? 'http://127.0.0.1:11434').replace(/\/$/, '');
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'llama3.2:3b';
@@ -181,6 +182,19 @@ function formatUserContent(tier, texts, meta = {}) {
   return `Summarize ONLY the following. Do not use any other context:\n\n${body}`;
 }
 
+async function callGroq(tier, texts, meta = {}) {
+  if (texts.length === 0) return '';
+
+  const raw = await groqChat({
+    system: PROMPTS[tier],
+    user: formatUserContent(tier, texts, meta),
+    maxTokens: NUM_PREDICT[tier] ?? 300,
+    temperature: 0.3,
+  });
+
+  return trimIncompleteEnding(raw);
+}
+
 async function callOllama(tier, texts, meta = {}) {
   if (texts.length === 0) return '';
 
@@ -221,6 +235,18 @@ async function callOllama(tier, texts, meta = {}) {
 
 async function generateSummary(tier, texts, meta = {}) {
   if (texts.length === 0) return '';
+
+  if (isGroqConfigured()) {
+    try {
+      const content = await callGroq(tier, texts, meta);
+      if (content) {
+        console.log(`[summarize] ${tier} via ${getGroqChatModel()}`);
+        return content;
+      }
+    } catch (err) {
+      console.warn(`[summarize] Groq unavailable (${getGroqChatModel()}): ${err.message}`);
+    }
+  }
 
   try {
     const content = await callOllama(tier, texts, meta);

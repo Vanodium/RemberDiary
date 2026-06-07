@@ -95,6 +95,7 @@ router.post('/', upload.single('audio'), async (req, res, next) => {
       recordedAt,
       recordedDate,
       userId: req.user.id,
+      mimeType: req.file.mimetype,
     });
   } catch (err) {
     next(err);
