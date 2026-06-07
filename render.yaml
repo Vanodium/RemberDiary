@@ -1,17 +1,14 @@
 # Render Blueprint — deploy from the Render dashboard via "New > Blueprint"
 # and point it at this repo (main branch recommended).
 #
-# After deploy, set SMTP_* and EMAIL_FROM manually in the API service env vars.
+# Render does NOT offer managed MySQL (only PostgreSQL). You must host MySQL
+# elsewhere and set the MYSQL_* env vars on rember-api after deploy.
 #
-# Free tier: persistent disks are not supported. Audio files are stored under
-# backend/data/audio on ephemeral disk (lost on redeploy). Upgrade the service
-# plan and add a disk block here if you need durable uploads.
-
-databases:
-  - name: rember-mysql
-    databaseName: rember
-    user: rember
-    plan: free
+# Recommended external MySQL: Aiven free tier (SSL required — set MYSQL_CA_CERT).
+# In Aiven: Service settings → IP allowlist → add Render outbound IPs
+# (Render dashboard → rember-api → Connect → Outbound IPs).
+#
+# After deploy, set MYSQL_* and SMTP_* / EMAIL_FROM on the API service.
 
 services:
   - type: web
@@ -30,25 +27,17 @@ services:
       - key: JWT_EXPIRES_IN
         value: 30d
       - key: MYSQL_HOST
-        fromDatabase:
-          name: rember-mysql
-          property: host
+        sync: false
       - key: MYSQL_PORT
-        fromDatabase:
-          name: rember-mysql
-          property: port
+        value: "3306"
       - key: MYSQL_USER
-        fromDatabase:
-          name: rember-mysql
-          property: user
+        sync: false
       - key: MYSQL_PASSWORD
-        fromDatabase:
-          name: rember-mysql
-          property: password
+        sync: false
       - key: MYSQL_DATABASE
-        fromDatabase:
-          name: rember-mysql
-          property: database
+        sync: false
+      - key: MYSQL_CA_CERT
+        sync: false
       - key: SMTP_HOST
         sync: false
       - key: SMTP_USER
