@@ -13,6 +13,13 @@ const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'small';
 const WHISPER_LANGUAGE = process.env.WHISPER_LANGUAGE ?? 'en';
 const SILENCE_MEAN_DB = Number(process.env.WHISPER_SILENCE_DB ?? -45);
 
+function explainWhisperError(stderr = '') {
+  if (stderr.includes('SHA256 checksum')) {
+    return `Whisper model "${WHISPER_MODEL}" download is corrupt — run: rm ~/.cache/whisper/${WHISPER_MODEL}.pt, then retry`;
+  }
+  return stderr.trim() || 'whisper failed';
+}
+
 async function saveTranscript(id, status, text = null) {
   await db
     .prepare(`UPDATE recordings SET transcript_status = ?, transcript = ? WHERE id = ?`)
@@ -77,7 +84,7 @@ function runWhisper(wavPath, outputDir) {
     child.on('close', (code) => {
       if (spawnFailed) return;
       if (code !== 0) {
-        reject(new Error(stderr.trim() || `whisper exited ${code}`));
+        reject(new Error(explainWhisperError(stderr) || `whisper exited ${code}`));
         return;
       }
       resolve();

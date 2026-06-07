@@ -51,7 +51,8 @@ Style:
 - Combine repeats: count them ("went to the gym 5 times"), list people met by name, name key wins and problems.
 - Include feelings only if a daily summary explicitly states them.
 - Omit day-by-day play-by-play; keep patterns, totals, and stand-out moments.
-- Usually 2–5 sentences.
+- Usually 2–5 sentences. Never exceed 5 sentences.
+- Always finish with a complete sentence.
 - Do not mention days, dates, summaries, journals, or recordings.
 
 Example input:
@@ -111,6 +112,24 @@ Gym 15 times, finished a certification, met Maya and Tom.
 Example output:
 In January I went to the gym 14 times, started a new diet, and met Alex. In February I kept up gym 12 times, got promoted, and traveled to Chicago. In March I went to the gym 15 times, finished a certification, and met Maya and Tom. Across the year I went to the gym every single month, about 41 times in those three months, got promoted once, took one trip, and met four people.`,
 };
+
+const NUM_PREDICT = {
+  daily: 180,
+  weekly: 700,
+  monthly: 900,
+  yearly: 650,
+};
+
+function trimIncompleteEnding(text) {
+  const trimmed = text.trim();
+  if (!trimmed || /[.!?]["']?$/.test(trimmed)) return trimmed;
+
+  const lastEnd = Math.max(trimmed.lastIndexOf('. '), trimmed.lastIndexOf('! '), trimmed.lastIndexOf('? '));
+  if (lastEnd >= 0) return trimmed.slice(0, lastEnd + 1).trim();
+
+  const lastChar = Math.max(trimmed.lastIndexOf('.'), trimmed.lastIndexOf('!'), trimmed.lastIndexOf('?'));
+  return lastChar >= 0 ? trimmed.slice(0, lastChar + 1).trim() : trimmed;
+}
 
 function fallbackSummary(texts) {
   return texts
@@ -179,7 +198,7 @@ async function callOllama(tier, texts, meta = {}) {
         stream: false,
         options: {
           temperature: 0.3,
-          num_predict: tier === 'yearly' ? 650 : tier === 'monthly' ? 500 : tier === 'weekly' ? 220 : 180,
+          num_predict: NUM_PREDICT[tier] ?? 300,
         },
       }),
     });
@@ -193,7 +212,11 @@ async function callOllama(tier, texts, meta = {}) {
   }
 
   const data = await res.json();
-  return data.message?.content?.trim() ?? '';
+  const raw = data.message?.content?.trim() ?? '';
+  if (data.done_reason === 'length' && raw) {
+    console.warn(`[summarize] ${tier} hit token limit (${NUM_PREDICT[tier]}), trimming incomplete ending`);
+  }
+  return trimIncompleteEnding(raw);
 }
 
 async function generateSummary(tier, texts, meta = {}) {
