@@ -5,7 +5,7 @@ import {
   getServerTimeParts,
   isEndOfWeek,
 } from '../lib/periods.js';
-import { sendWeeklySummaryEmail } from './email.js';
+import { isIgnoredEmail, sendWeeklySummaryEmail } from './email.js';
 
 const CHECK_INTERVAL_MS = 15_000;
 const DEBUG = process.env.WEEKLY_EMAIL_DEBUG === '1';
@@ -61,6 +61,8 @@ async function processWeeklySummaryEmails() {
   }
 
   for (const row of rows) {
+    if (isIgnoredEmail(row.email)) continue;
+
     const endOfWeekDay = row.end_of_week_day ?? 'sun';
     const timezone = row.timezone ?? 'UTC';
     const todayIso = getIsoDateInTimezone(timezone, now);
