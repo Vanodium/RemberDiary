@@ -2,6 +2,10 @@
 # and point it at this repo (main branch recommended).
 #
 # After deploy, set SMTP_* and EMAIL_FROM manually in the API service env vars.
+#
+# Free tier: persistent disks are not supported. Audio files are stored under
+# backend/data/audio on ephemeral disk (lost on redeploy). Upgrade the service
+# plan and add a disk block here if you need durable uploads.
 
 databases:
   - name: rember-mysql
@@ -18,10 +22,6 @@ services:
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
-    disk:
-      name: rember-audio
-      mountPath: /opt/render/project/src/backend/data
-      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: "22"
