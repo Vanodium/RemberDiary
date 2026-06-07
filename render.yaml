@@ -1,0 +1,63 @@
+# Render Blueprint — deploy from the Render dashboard via "New > Blueprint"
+# and point it at this repo (main branch recommended).
+#
+# After deploy, set SMTP_* and EMAIL_FROM manually in the API service env vars.
+
+databases:
+  - name: rember-mysql
+    databaseName: rember
+    user: rember
+    plan: free
+
+services:
+  - type: web
+    name: rember-api
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: rember-audio
+      mountPath: /opt/render/project/src/backend/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      - key: MYSQL_HOST
+        fromDatabase:
+          name: rember-mysql
+          property: host
+      - key: MYSQL_PORT
+        fromDatabase:
+          name: rember-mysql
+          property: port
+      - key: MYSQL_USER
+        fromDatabase:
+          name: rember-mysql
+          property: user
+      - key: MYSQL_PASSWORD
+        fromDatabase:
+          name: rember-mysql
+          property: password
+      - key: MYSQL_DATABASE
+        fromDatabase:
+          name: rember-mysql
+          property: database
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "0"
+      - key: EMAIL_FROM
+        sync: false
