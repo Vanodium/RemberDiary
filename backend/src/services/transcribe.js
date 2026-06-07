@@ -9,7 +9,7 @@ import { updateDailySummary } from './summarize.js';
 const execFileAsync = promisify(execFile);
 
 const WHISPER_BIN = process.env.WHISPER_BIN ?? 'whisper';
-const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'base';
+const WHISPER_MODEL = process.env.WHISPER_MODEL ?? 'small';
 const WHISPER_LANGUAGE = process.env.WHISPER_LANGUAGE ?? 'en';
 const SILENCE_MEAN_DB = Number(process.env.WHISPER_SILENCE_DB ?? -45);
 

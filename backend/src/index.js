@@ -1,9 +1,11 @@
+import 'dotenv/config';
 import cors from 'cors';
 import express from 'express';
 import db from './db/index.js';
 import authRouter from './routes/auth.js';
 import recordingsRouter from './routes/recordings.js';
 import summariesRouter from './routes/summaries.js';
+import { startWeeklySummaryEmailScheduler } from './services/weeklySummaryEmail.js';
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -28,6 +30,7 @@ await db.initDb();
 
 const server = app.listen(PORT, () => {
   console.log(`Rember API listening on http://localhost:${PORT}`);
+  startWeeklySummaryEmailScheduler();
 });
 
 server.on('error', (err) => {
