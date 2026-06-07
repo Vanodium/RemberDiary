@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import MicIcon from '../components/MicIcon';
 import { useOverlay } from '../context/OverlayContext';
+import { useSummaries } from '../context/SummariesContext';
 import { formatDuration, useVoiceRecorder } from '../hooks/useVoiceRecorder';
 import { uploadRecording } from '../lib/api';
 import { saveLocalRecording, updateLocalRecording } from '../lib/localRecordings';
@@ -17,6 +18,7 @@ function formatToday() {
 
 export default function Home() {
   const { openSettings } = useOverlay();
+  const { refresh: refreshSummaries } = useSummaries();
   const [status, setStatus] = useState(null);
   const [visible, setVisible] = useState(false);
 
@@ -26,30 +28,31 @@ export default function Home() {
   }, []);
 
   const handleRecordingComplete = useCallback(async (recording) => {
-    if (recording.silent) {
-      setStatus('Check the microphone');
-      setTimeout(() => setStatus(null), 4000);
-      return;
-    }
+    setStatus(recording.silent ? 'saving quietly…' : 'saving…');
 
-    setStatus('saving…');
-
-    const localId = await saveLocalRecording(recording);
-
+    let localId;
     try {
+      localId = await saveLocalRecording(recording);
       const server = await uploadRecording(recording);
       await updateLocalRecording(localId, {
         serverId: server.id,
         uploadStatus: 'uploaded',
       });
-      setStatus('saved');
-    } catch {
-      await updateLocalRecording(localId, { uploadStatus: 'failed' });
-      setStatus('saved locally');
+      setStatus('saved — processing');
+      void refreshSummaries();
+      window.setTimeout(() => void refreshSummaries(), 8000);
+      window.setTimeout(() => void refreshSummaries(), 20000);
+      window.setTimeout(() => void refreshSummaries(), 45000);
+    } catch (err) {
+      if (localId) {
+        await updateLocalRecording(localId, { uploadStatus: 'failed' });
+      }
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      setStatus(message.includes('401') ? 'Sign in again' : 'Could not upload — saved locally');
     }
 
-    setTimeout(() => setStatus(null), 2000);
-  }, []);
+    setTimeout(() => setStatus(null), 5000);
+  }, [refreshSummaries]);
 
   const { recording, durationMs, audioDetected, error, start, stop } = useVoiceRecorder({
     onComplete: handleRecordingComplete,

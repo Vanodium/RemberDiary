@@ -9,7 +9,8 @@ const AUDIO_CONSTRAINTS = {
   autoGainControl: true,
 };
 
-const SILENT_PEAK_THRESHOLD = 8;
+const SILENT_PEAK_THRESHOLD = 4;
+const RECORD_TIMESLICE_MS = 250;
 
 function stopStream(stream) {
   stream?.getTracks().forEach((track) => track.stop());
@@ -17,6 +18,7 @@ function stopStream(stream) {
 
 function createLevelMonitor(stream, onPeak) {
   const ctx = new AudioContext();
+  void ctx.resume();
   const analyser = ctx.createAnalyser();
   analyser.fftSize = 256;
   const source = ctx.createMediaStreamSource(stream);
@@ -69,6 +71,11 @@ export function useVoiceRecorder({ onComplete }) {
       setAudioDetected(false);
       peakLevelRef.current = 0;
 
+      if (typeof MediaRecorder === 'undefined') {
+        setError('Recording is not supported in this browser');
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
       streamRef.current = stream;
 
@@ -94,7 +101,9 @@ export function useVoiceRecorder({ onComplete }) {
         const peakLevel = peakLevelRef.current;
         const silent = peakLevel < SILENT_PEAK_THRESHOLD;
 
-        if (blob.size > 0) {
+        if (blob.size === 0) {
+          setError('Recording failed — try again');
+        } else {
           const now = new Date();
           onCompleteRef.current?.({
             blob,
@@ -116,7 +125,7 @@ export function useVoiceRecorder({ onComplete }) {
 
       recorderRef.current = recorder;
       startTimeRef.current = Date.now();
-      recorder.start();
+      recorder.start(RECORD_TIMESLICE_MS);
       setRecording(true);
       setDurationMs(0);
 

@@ -36,6 +36,11 @@ function buildPoolConfig() {
 const poolConfig = buildPoolConfig();
 
 let pool;
+let dbReady = false;
+
+export function isDbReady() {
+  return dbReady;
+}
 
 function isRetryableError(err) {
   return ['ETIMEDOUT', 'ECONNREFUSED', 'ENOTFOUND'].includes(err?.code);
@@ -153,6 +158,7 @@ export async function initDb() {
   `);
 
   await runMigrations(pool);
+  dbReady = true;
 }
 
 const db = { prepare, exec, initDb };

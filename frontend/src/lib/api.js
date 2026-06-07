@@ -1,6 +1,8 @@
 import { clearToken, getToken } from './authStorage';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+const API_BASE =
+  import.meta.env.VITE_API_URL ??
+  (import.meta.env.PROD ? 'https://rember-api.onrender.com/api' : '/api');
 
 async function parseJson(res) {
   const data = await res.json().catch(() => ({}));
@@ -57,18 +59,39 @@ export async function updateUserSettings(settings) {
   });
 }
 
+function normalizeUploadMimeType(mimeType) {
+  const type = mimeType.toLowerCase();
+  if (type.startsWith('audio/')) return type;
+  if (type === 'video/mp4') return 'audio/mp4';
+  if (type === 'video/webm') return 'audio/webm';
+  return mimeType;
+}
+
 export async function uploadRecording({ blob, mimeType, durationMs, recordedAt, recordedDate }) {
+  const uploadMimeType = normalizeUploadMimeType(mimeType);
   const form = new FormData();
-  const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'm4a' : 'audio';
-  form.append('audio', blob, `recording.${ext}`);
+  const ext = uploadMimeType.includes('webm')
+    ? 'webm'
+    : uploadMimeType.includes('mp4')
+      ? 'm4a'
+      : 'audio';
+  form.append('audio', new Blob([blob], { type: uploadMimeType }), `recording.${ext}`);
   form.append('durationMs', String(durationMs));
   form.append('recordedAt', recordedAt);
   form.append('recordedDate', recordedDate ?? recordedAt.slice(0, 10));
 
-  return apiFetch('/recordings', {
-    method: 'POST',
-    body: form,
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120_000);
+
+  try {
+    return await apiFetch('/recordings', {
+      method: 'POST',
+      body: form,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function fetchRecordings() {
