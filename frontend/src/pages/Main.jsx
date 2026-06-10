@@ -41,7 +41,7 @@ export default function Main({ exiting = false, initialHovered = false, onStartC
       <div className="main-left">
         {exiting ? (
           <span className="main-start" aria-hidden="true">
-            start
+            zacetak
           </span>
         ) : (
           <Link
